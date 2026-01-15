@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Doctor Dashboard</title>
+</head>
+<body>
+    <h2>Doctor Dashboard</h2>
+
+    <p>Welcome Dr. {{ request.user.username }}</p>
+
+    <ul>
+        <li>View Appointments</li>
+        <li>Edit Profile</li>
+        <li>Approve / Reject Appointments</li>
+    </ul>
+
+    <a href="{% url 'logout' %}">Logout</a>
+</body>
+</html>

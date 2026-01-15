@@ -1,0 +1,74 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}MediPredict{% endblock %}</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fb; }
+    .navbar {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar .brand {
+      font-weight: bold;
+      font-size: 20px;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-left: 15px;
+      font-size: 14px;
+    }
+    .navbar a:hover {
+      text-decoration: underline;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      padding: 20px 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">
+      <a href="{% url 'home' %}" style="color:white; text-decoration:none;">MediPredict</a>
+    </div>
+    <div>
+      {% if user.is_authenticated %}
+        {% if user.is_patient %}
+          <a href="{% url 'patient_dashboard' %}">Patient Dashboard</a>
+          <a href="{% url 'predict_disease' %}">Predict Disease</a>
+          <a href="{% url 'doctor_list' %}">Find Doctors</a>
+        {% elif user.is_doctor %}
+          <a href="{% url 'doctor_dashboard' %}">Doctor Dashboard</a>
+          <a href="{% url 'doctor_list' %}">All Doctors</a>
+        {% endif %}
+        <a href="{% url 'logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'patient_signup' %}">Patient Signup</a>
+        <a href="{% url 'doctor_signup' %}">Doctor Signup</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+</body>
+</html>
+

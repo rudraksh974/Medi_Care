@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Available Doctors | MediPredict{% endblock %}
+
+{% block content %}
+  <h1>Available Doctors 👨‍⚕️👩‍⚕️</h1>
+  {% for doctor in doctors %}
+    <div class="doctor-card" style="border:1px solid #ccc; padding:15px; border-radius:10px; margin-bottom:15px; background:#f9f9f9;">
+      <h2>Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h2>
+      <p><b>Specialization:</b> {{ doctor.specialization }}</p>
+      <p><b>Experience:</b> {{ doctor.experience }} years</p>
+      <p><b>Location:</b> {{ doctor.location }}</p>
+      <p><b>Phone:</b> {{ doctor.phone }}</p>
+    </div>
+  {% empty %}
+    <p>No doctors available at the moment.</p>
+  {% endfor %}
+{% endblock %}

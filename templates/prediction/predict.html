@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Disease Prediction | MediPredict{% endblock %}
+
+{% block content %}
+  <h1>Disease Prediction 🧬</h1>
+  <form method="POST">
+    {% csrf_token %}
+    <label>Enter symptoms (comma-separated):</label><br>
+    <input type="text" name="symptoms" placeholder="e.g., fever, cough, headache"><br>
+    <button type="submit">Predict</button>
+  </form>
+
+  {% if result %}
+    <div class="result" style="margin-top:20px; font-size:18px; color:green;">
+      <p><strong>Symptoms:</strong> {{ symptoms }}</p>
+      <p><strong>Predicted Disease:</strong> {{ result }}</p>
+    </div>
+  {% endif %}
+
+  <a href="{% url 'home' %}">← Back to Home</a>
+{% endblock %}

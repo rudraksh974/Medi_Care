@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Signup | MediPredict{% endblock %}
+
+{% block content %}
+  <h2>
+    {% if role == 'doctor' %}
+      Doctor Signup
+    {% else %}
+      Patient Signup
+    {% endif %}
+  </h2>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Sign Up</button>
+  </form>
+{% endblock %}

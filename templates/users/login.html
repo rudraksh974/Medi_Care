@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | MediPredict{% endblock %}
+
+{% block content %}
+  <h1>Login 🩺</h1>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+  </form>
+  <p>Don’t have an account?
+    <a href="{% url 'patient_signup' %}">Signup as Patient</a> |
+    <a href="{% url 'doctor_signup' %}">Signup as Doctor</a>
+  </p>
+{% endblock %}
