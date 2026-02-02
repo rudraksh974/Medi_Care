@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}My Appointments | MediPredict{% endblock %}
+
+{% block content %}
+  <h1>My Appointments</h1>
+
+  {% if appointments %}
+    <!-- Display all appointments for logged-in patient -->
+    <!-- Backend: patient_appointments view filters by request.user -->
+    <ul class="appointment-list">
+      {% for appointment in appointments %}
+        <li class="appointment-item">
+          <div>
+            <strong>Doctor:</strong> Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}
+            <br>
+            <strong>Specialization:</strong> {{ appointment.doctor.specialization }}
+            <br>
+            <!-- Date formatting: Django template filter for readable dates -->
+            <strong>Appointment Time:</strong> {{ appointment.appointment_time|date:"F d, Y g:i A" }}
+            <br>
+            <strong>Status:</strong> 
+            <span class="status-{{ appointment.status|lower }}">
+              {{ appointment.status }}
+            </span>
+            <br>
+            <strong>Booked on:</strong> {{ appointment.created_at|date:"F d, Y" }}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <!-- Empty state: Gracefully handle when no appointments exist -->
+    <div style="text-align: center; padding: 40px; color: #666;">
+      <p style="font-size: 18px;">You don't have any appointments yet.</p>
+      <p><a href="{% url 'doctor_list' %}" class="btn">Book Your First Appointment</a></p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,19 +1,44 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Doctor Dashboard</title>
-</head>
-<body>
-    <h2>Doctor Dashboard</h2>
+{% extends 'base.html' %}
 
-    <p>Welcome Dr. {{ request.user.username }}</p>
+{% block title %}Doctor Dashboard | MediPredict{% endblock %}
 
-    <ul>
-        <li>View Appointments</li>
-        <li>Edit Profile</li>
-        <li>Approve / Reject Appointments</li>
+{% block content %}
+  <h1>Welcome, Dr. {{ user.get_full_name|default:user.username }}!</h1>
+  <p>You are logged in as a <strong>Doctor</strong>.</p>
+
+  {% if user.doctor_profile %}
+    <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 4px;">
+      <p><strong>Specialization:</strong> {{ user.doctor_profile.specialization }}</p>
+      <p><strong>Experience:</strong> {{ user.doctor_profile.experience|default:"Not set" }} years</p>
+      <p><strong>Location:</strong> {{ user.doctor_profile.location }}</p>
+    </div>
+  {% endif %}
+
+  <div style="margin-top: 30px;">
+    <h2>Quick Actions</h2>
+    <ul style="list-style: none; padding: 0;">
+      <li style="margin-bottom: 15px;">
+        <a href="{% url 'doctor_appointments' %}" class="btn">View Appointments</a>
+        <span style="margin-left: 10px; color: #666;">Manage and approve/reject patient appointments</span>
+      </li>
+      <li style="margin-bottom: 15px;">
+        <a href="{% url 'edit_doctor_profile' %}" class="btn">Edit Profile</a>
+        <span style="margin-left: 10px; color: #666;">Update your profile information</span>
+      </li>
     </ul>
+  </div>
 
-    <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>
+  <!-- Simple status overview -->
+  {% if user.doctor_profile %}
+    <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+      <h3>Status Overview</h3>
+      <p><strong>Availability:</strong> 
+        {% if user.doctor_profile.available %}
+          <span style="color: #28a745;">Available</span>
+        {% else %}
+          <span style="color: #dc3545;">Not Available</span>
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -3,72 +3,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}MediPredict{% endblock %}</title>
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fb; }
-    .navbar {
-      background: #007bff;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .navbar .brand {
-      font-weight: bold;
-      font-size: 20px;
-    }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      margin-left: 15px;
-      font-size: 14px;
-    }
-    .navbar a:hover {
-      text-decoration: underline;
-    }
-    .container {
-      max-width: 900px;
-      margin: 30px auto;
-      background: white;
-      padding: 20px 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-  </style>
-  {% block extra_head %}{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MediPredict - Find the Right Doctor, Anytime, Anywhere{% endblock %}</title>
+    <meta name="description" content="Book appointments and manage your healthcare easily with MediPredict. Find verified doctors, schedule consultations, and take control of your health journey.">
+    <meta name="keywords" content="healthcare, doctor appointment, medical booking, find doctors, health platform">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <!-- ============================================
+         NAVBAR
+    ============================================ -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <a href="{% url 'home' %}" class="navbar-logo">
+                    <div class="navbar-logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+                            <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+                            <circle cx="20" cy="10" r="2"/>
+                        </svg>
+                    </div>
+                    <span class="navbar-logo-text">Medi<span>Predict</span></span>
+                </a>
 
-  <div class="navbar">
-    <div class="brand">
-      <a href="{% url 'home' %}" style="color:white; text-decoration:none;">MediPredict</a>
-    </div>
-    <div>
-      {% if user.is_authenticated %}
-        {% if user.is_patient %}
-          <a href="{% url 'patient_dashboard' %}">Patient Dashboard</a>
-          <a href="{% url 'predict_disease' %}">Predict Disease</a>
-          <a href="{% url 'doctor_list' %}">Find Doctors</a>
-        {% elif user.is_doctor %}
-          <a href="{% url 'doctor_dashboard' %}">Doctor Dashboard</a>
-          <a href="{% url 'doctor_list' %}">All Doctors</a>
-        {% endif %}
-        <a href="{% url 'logout' %}">Logout</a>
-      {% else %}
-        <a href="{% url 'login' %}">Login</a>
-        <a href="{% url 'patient_signup' %}">Patient Signup</a>
-        <a href="{% url 'doctor_signup' %}">Doctor Signup</a>
-      {% endif %}
-    </div>
-  </div>
+                <div class="navbar-nav">
+                    <a href="{% url 'home' %}">Home</a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_patient %}
+                            <a href="{% url 'doctor_list' %}">Doctors</a>
+                            <a href="{% url 'patient_appointments' %}">Appointments</a>
+                        {% elif user.is_doctor %}
+                            <a href="{% url 'doctor_appointments' %}">Appointments</a>
+                            <a href="{% url 'edit_doctor_profile' %}">Profile</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'doctor_list' %}">Doctors</a>
+                        <a href="#how-it-works">How It Works</a>
+                    {% endif %}
+                </div>
 
-  <div class="container">
+                <div class="navbar-auth">
+                    {% if user.is_authenticated %}
+                        {% if user.is_patient %}
+                            <a href="{% url 'patient_dashboard' %}" class="btn btn-ghost">Dashboard</a>
+                        {% elif user.is_doctor %}
+                            <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost">Dashboard</a>
+                        {% endif %}
+                        <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-ghost">Login</a>
+                        <a href="{% url 'patient_signup' %}" class="btn btn-primary">Sign Up</a>
+                    {% endif %}
+                </div>
+
+                <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation menu">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="12" y2="12"/>
+                        <line x1="4" x2="20" y1="6" y2="6"/>
+                        <line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                    <svg class="close-icon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Navigation Menu -->
+            <div class="navbar-mobile" id="navbarMobile">
+                <a href="{% url 'home' %}">Home</a>
+                {% if user.is_authenticated %}
+                    {% if user.is_patient %}
+                        <a href="{% url 'doctor_list' %}">Doctors</a>
+                        <a href="{% url 'patient_appointments' %}">Appointments</a>
+                        <a href="{% url 'patient_dashboard' %}">Dashboard</a>
+                    {% elif user.is_doctor %}
+                        <a href="{% url 'doctor_appointments' %}">Appointments</a>
+                        <a href="{% url 'edit_doctor_profile' %}">Profile</a>
+                        <a href="{% url 'doctor_dashboard' %}">Dashboard</a>
+                    {% endif %}
+                    <div class="navbar-mobile-auth">
+                        <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+                    </div>
+                {% else %}
+                    <a href="{% url 'doctor_list' %}">Doctors</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <div class="navbar-mobile-auth">
+                        <a href="{% url 'login' %}" class="btn btn-outline">Login</a>
+                        <a href="{% url 'patient_signup' %}" class="btn btn-primary">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Block -->
     {% block content %}
     {% endblock %}
-  </div>
 
+    
+     <!-- FOOTER (Only show on home page, can be overridden) -->
+  
+    {% block footer %}
+    {% endblock %}
+
+    <!-- Main JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
-

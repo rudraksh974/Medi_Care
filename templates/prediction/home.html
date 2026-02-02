@@ -1,8 +1,473 @@
 {% extends 'base.html' %}
 
-{% block title %}MediPredict - Home{% endblock %}
+{% block title %}MediPredict - Find the Right Doctor, Anytime, Anywhere{% endblock %}
+
 {% block content %}
-  <h1>Welcome to <span style="color:#007bff;">MediPredict</span> 🩺</h1>
-  <p>Get AI-powered disease predictions and find nearby doctors instantly.</p>
-  <a href="{% url 'predict_disease' %}">Go to Disease Predictor</a>
+    <!-- ============================================
+         HERO SECTION
+    ============================================ -->
+    <section class="hero" id="home">
+        <div class="hero-bg-circle-1"></div>
+        <div class="hero-bg-circle-2"></div>
+
+        <div class="container">
+            <div class="hero-inner">
+                <div class="hero-content">
+                    <div class="badge animate-fade-up">
+                        <span class="badge-dot"></span>
+                        Trusted by 10,000+ patients
+                    </div>
+
+                    <h1 class="hero-title animate-fade-up-delay-1">
+                        Find the Right Doctor,<br>
+                        <span class="text-gradient">Anytime, Anywhere</span>
+                    </h1>
+
+                    <p class="hero-description animate-fade-up-delay-2">
+                        Book appointments and manage your healthcare easily with our comprehensive platform designed for your well-being.
+                    </p>
+
+                    <div class="hero-buttons animate-fade-up-delay-3">
+                        {% if user.is_authenticated and user.is_patient %}
+                            <a href="{% url 'doctor_list' %}" class="btn btn-primary btn-xl">
+                                Book Appointment
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="m12 5 7 7-7 7"/>
+                                </svg>
+                            </a>
+                        {% elif user.is_authenticated and user.is_doctor %}
+                            <a href="{% url 'doctor_dashboard' %}" class="btn btn-primary btn-xl">
+                                Go to Dashboard
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="m12 5 7 7-7 7"/>
+                                </svg>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'patient_signup' %}" class="btn btn-primary btn-xl">
+                                Book Appointment
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="m12 5 7 7-7 7"/>
+                                </svg>
+                            </a>
+                            <a href="{% url 'doctor_signup' %}" class="btn btn-outline btn-xl">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <line x1="19" x2="19" y1="8" y2="14"/>
+                                    <line x1="22" x2="16" y1="11" y2="11"/>
+                                </svg>
+                                Join as Doctor
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="hero-stats animate-fade-up-delay-3">
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">500+</div>
+                            <div class="hero-stat-label">Verified Doctors</div>
+                        </div>
+                        <div class="hero-stat-divider"></div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">50K+</div>
+                            <div class="hero-stat-label">Appointments</div>
+                        </div>
+                        <div class="hero-stat-divider"></div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">4.9★</div>
+                            <div class="hero-stat-label">User Rating</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-image-wrapper animate-float">
+                    <img src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800&q=80" alt="Medical professionals providing healthcare" class="hero-image">
+
+                    <div class="hero-floating-card hero-card-1">
+                        <div class="hero-floating-card-inner">
+                            <div class="hero-floating-card-icon green">🩺</div>
+                            <div>
+                                <div class="hero-floating-card-title">Quick Booking</div>
+                                <div class="hero-floating-card-text">Get appointment in 5 mins</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hero-floating-card hero-card-2">
+                        <div class="hero-floating-card-inner">
+                            <div class="hero-floating-card-icon blue">✓</div>
+                            <div>
+                                <div class="hero-floating-card-title">100% Verified</div>
+                                <div class="hero-floating-card-text">All doctors certified</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         FEATURES SECTION
+    ============================================ -->
+    <section class="features section-padding" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge">Features</span>
+                <h2 class="section-title">Everything You Need for Better Healthcare</h2>
+                <p class="section-description">Our comprehensive platform offers all the tools you need to manage your health journey effectively.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Doctor Discovery</h3>
+                    <p class="feature-description">Find the perfect doctor based on specialty, location, and patient reviews.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/>
+                            <line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                            <path d="m9 16 2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Easy Appointment Booking</h3>
+                    <p class="feature-description">Book appointments instantly with just a few clicks, 24/7 availability.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Secure Login</h3>
+                    <p class="feature-description">Your data is protected with enterprise-grade security and encryption.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Nearby Hospitals</h3>
+                    <p class="feature-description">Locate hospitals and clinics near you with integrated maps.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Fast & Reliable</h3>
+                    <p class="feature-description">Lightning-fast platform designed for seamless healthcare experience.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         HOW IT WORKS SECTION
+    ============================================ -->
+    <section class="how-it-works section-padding" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge">How It Works</span>
+                <h2 class="section-title">Your Healthcare Journey Made Simple</h2>
+                <p class="section-description">Getting the care you need is just four easy steps away.</p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-connector"></div>
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-bg"></div>
+                        <div class="step-icon-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <line x1="19" x2="19" y1="8" y2="14"/>
+                                <line x1="22" x2="16" y1="11" y2="11"/>
+                            </svg>
+                        </div>
+                        <span class="step-number">01</span>
+                    </div>
+                    <h3 class="step-title">Register / Login</h3>
+                    <p class="step-description">Create your free account in seconds or login to your existing account.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-connector"></div>
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-bg"></div>
+                        <div class="step-icon-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.3-4.3"/>
+                            </svg>
+                        </div>
+                        <span class="step-number">02</span>
+                    </div>
+                    <h3 class="step-title">Search Doctor</h3>
+                    <p class="step-description">Browse our network of verified doctors by specialty, location, or availability.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-connector"></div>
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-bg"></div>
+                        <div class="step-icon-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                <line x1="16" x2="16" y1="2" y2="6"/>
+                                <line x1="8" x2="8" y1="2" y2="6"/>
+                                <line x1="3" x2="21" y1="10" y2="10"/>
+                            </svg>
+                        </div>
+                        <span class="step-number">03</span>
+                    </div>
+                    <h3 class="step-title">Book Appointment</h3>
+                    <p class="step-description">Choose your preferred time slot and confirm your appointment instantly.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-bg"></div>
+                        <div class="step-icon-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m22 8-6 4 6 4V8Z"/>
+                                <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+                            </svg>
+                        </div>
+                        <span class="step-number">04</span>
+                    </div>
+                    <h3 class="step-title">Get Consultation</h3>
+                    <p class="step-description">Visit the clinic or connect online for your healthcare consultation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         WHY CHOOSE US SECTION
+    ============================================ -->
+    <section class="why-choose-us section-padding">
+        <div class="container">
+            <div class="why-grid">
+                <div class="why-content">
+                    <span class="badge">Why Choose Us</span>
+                    <h2>Healthcare You Can <span class="text-gradient">Trust</span></h2>
+                    <p>We're committed to providing the best healthcare experience with verified professionals and secure, easy-to-use technology.</p>
+
+                    <div class="why-list">
+                        <div class="why-item">
+                            <div class="why-item-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="why-item-title">Verified Doctors</h4>
+                                <p class="why-item-text">All doctors on our platform are thoroughly verified with proper credentials.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-item">
+                            <div class="why-item-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="2" x2="22" y1="12" y2="12"/>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="why-item-title">Free External Doctor Search</h4>
+                                <p class="why-item-text">Search for doctors beyond our network using our integrated external search.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-item">
+                            <div class="why-item-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                                    <path d="M12 18h.01"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="why-item-title">User-Friendly Interface</h4>
+                                <p class="why-item-text">Intuitive design that makes navigating healthcare services a breeze.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-item">
+                            <div class="why-item-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="why-item-title">Secure Data</h4>
+                                <p class="why-item-text">Your health information is protected with bank-level security.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card stats-card">
+                    <div class="stats-grid">
+                        <div class="stat-item primary">
+                            <div class="stat-value">500+</div>
+                            <div class="stat-label">Verified Doctors</div>
+                        </div>
+                        <div class="stat-item accent">
+                            <div class="stat-value">50K+</div>
+                            <div class="stat-label">Happy Patients</div>
+                        </div>
+                        <div class="stat-item accent">
+                            <div class="stat-value">99%</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-item primary">
+                            <div class="stat-value">24/7</div>
+                            <div class="stat-label">Support</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         CTA SECTION
+    ============================================ -->
+    <section class="cta">
+        <div class="cta-bg-circle cta-bg-circle-1"></div>
+        <div class="cta-bg-circle cta-bg-circle-2"></div>
+        <div class="cta-bg-circle cta-bg-circle-3"></div>
+
+        <div class="cta-content">
+            <h2 class="cta-title">Start Your Healthcare Journey Today</h2>
+            <p class="cta-description">Join thousands of patients who have found the right doctors and taken control of their health with MediPredict.</p>
+            <div class="cta-buttons">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'patient_signup' %}" class="btn btn-white btn-xl">
+                        Get Started
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </a>
+                {% else %}
+                    {% if user.is_patient %}
+                        <a href="{% url 'doctor_list' %}" class="btn btn-white btn-xl">
+                            Book Appointment
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14"/>
+                                <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         FOOTER
+    ============================================ -->
+    {% block footer %}
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="{% url 'home' %}" class="navbar-logo" style="margin-bottom: 1rem;">
+                        <div class="navbar-logo-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+                                <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+                                <circle cx="20" cy="10" r="2"/>
+                            </svg>
+                        </div>
+                        <span class="navbar-logo-text">Medi<span>Predict</span></span>
+                    </a>
+                    <p>Making healthcare accessible and convenient for everyone. Book appointments, find doctors, and manage your health with ease.</p>
+                    <div class="footer-contact">
+                        <a href="mailto:contact@medipredict.com">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                            </svg>
+                            contact@medipredict.com
+                        </a>
+                        <a href="tel:+1234567890">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            +1 (234) 567-890
+                        </a>
+                        <span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            123 Healthcare Ave, Medical City
+                        </span>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms & Conditions</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">HIPAA Compliance</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Feedback</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2026 MediPredict. All rights reserved.</p>
+                <p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors</p>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
 {% endblock %}

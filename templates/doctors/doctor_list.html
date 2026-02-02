@@ -2,17 +2,77 @@
 
 {% block title %}Available Doctors | MediPredict{% endblock %}
 
+
 {% block content %}
-  <h1>Available Doctors 👨‍⚕️👩‍⚕️</h1>
-  {% for doctor in doctors %}
-    <div class="doctor-card" style="border:1px solid #ccc; padding:15px; border-radius:10px; margin-bottom:15px; background:#f9f9f9;">
-      <h2>Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h2>
-      <p><b>Specialization:</b> {{ doctor.specialization }}</p>
-      <p><b>Experience:</b> {{ doctor.experience }} years</p>
-      <p><b>Location:</b> {{ doctor.location }}</p>
-      <p><b>Phone:</b> {{ doctor.phone }}</p>
-    </div>
-  {% empty %}
-    <p>No doctors available at the moment.</p>
-  {% endfor %}
+<h1>Available Doctors 👨‍⚕️👩‍⚕️</h1>
+
+  <p>Doctors For Booking: {{ doctors|length }}</p>
+  <p>External doctors count: {{ external_doctors|length }}</p>
+  <!-- ================= REGISTERED DOCTORS ================= -->
+  <h2>Registered Doctors</h2>
+
+  {% if doctors %}
+    {% for doctor in doctors %}
+      <div class="doctor-card" style="border:1px solid #ccc; padding:15px; border-radius:10px; margin-bottom:15px; background:#f9f9f9;">
+        <h2>Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h2>
+        <p><b>Specialization:</b> {{ doctor.specialization }}</p>
+
+        {% if doctor.experience %}
+          <p><b>Experience:</b> {{ doctor.experience }} years</p>
+        {% endif %}
+
+        <p><b>Location:</b> {{ doctor.location }}</p>
+
+        {% if doctor.phone %}
+          <p><b>Phone:</b> {{ doctor.phone }}</p>
+        {% endif %}
+
+        {% if user.is_authenticated and user.is_patient %}
+          <div style="margin-top: 15px;">
+            <a href="{% url 'book_appointment' doctor.id %}" class="btn">
+              Book Appointment
+            </a>
+          </div>
+        {% elif not user.is_authenticated %}
+          <p style="color: #666; font-size: 14px;">
+            <a href="{% url 'login' %}">Login</a> as a patient to book an appointment
+          </p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#666;">No registered doctors available.</p>
+  {% endif %}
+
+  <hr style="margin:40px 0;">
+
+  <!-- ================= EXTERNAL DOCTORS (OSM) ================= -->
+  <h2>Nearby Hospitals & Clinics (External)</h2>
+
+  {% if external_doctors %}
+    {% for doc in external_doctors %}
+      <div class="doctor-card" style="border:1px dashed #aaa; padding:15px; border-radius:10px; margin-bottom:15px; background:#fff;">
+        <h3>{{ doc.name }}</h3>
+        <p><b>Address:</b> {{ doc.address }}</p>
+
+        <div style="margin-top: 10px;">
+          <a
+            href="https://www.openstreetmap.org/?mlat={{ doc.lat }}&mlon={{ doc.lng }}"
+            target="_blank"
+            class="btn"
+            style="background:#eee; color:#333;"
+          >
+            View on Map
+          </a>
+        </div>
+
+        <p style="font-size:13px; color:#777; margin-top:8px;">
+          External doctor • Appointment not available
+        </p>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#666;">No nearby hospitals found.</p>
+  {% endif %}
+
 {% endblock %}

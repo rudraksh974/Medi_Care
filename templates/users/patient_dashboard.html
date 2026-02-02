@@ -1,19 +1,26 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Patient Dashboard</title>
-</head>
-<body>
-    <h2>Patient Dashboard</h2>
+{% extends 'base.html' %}
 
-    <p>Welcome, {{ request.user.username }}</p>
+{% block title %}Patient Dashboard | MediPredict{% endblock %}
 
-    <ul>
-        <li>Disease Prediction</li>
-        <li>Book Appointment</li>
-        <li>View Appointments</li>
+{% block content %}
+  <h1>Welcome, {{ user.username }}!</h1>
+  <p>You are logged in as a <strong>Patient</strong>.</p>
+
+  <div style="margin-top: 30px;">
+    <h2>Quick Actions</h2>
+    <ul style="list-style: none; padding: 0;">
+      <li style="margin-bottom: 15px;">
+        <a href="{% url 'predict_disease' %}" class="btn">Predict Disease</a>
+        <span style="margin-left: 10px; color: #666;">Check your symptoms and get predictions</span>
+      </li>
+      <li style="margin-bottom: 15px;">
+        <a href="{% url 'doctor_list' %}" class="btn">Book Appointment</a>
+        <span style="margin-left: 10px; color: #666;">Find and book appointments with doctors</span>
+      </li>
+      <li style="margin-bottom: 15px;">
+        <a href="{% url 'patient_appointments' %}" class="btn">View My Appointments</a>
+        <span style="margin-left: 10px; color: #666;">See all your scheduled appointments</span>
+      </li>
     </ul>
-
-    <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>
+  </div>
+{% endblock %}

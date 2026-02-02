@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Appointment | MediPredict{% endblock %}
+
+{% block content %}
+  <h1>Book Appointment</h1>
+
+  <!-- Doctor details display -->
+  <div style="padding: 15px; background: #e7f3ff; border-radius: 4px; margin-bottom: 20px;">
+    <h2>Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</h2>
+    <p><strong>Specialization:</strong> {{ doctor.specialization }}</p>
+    {% if doctor.experience %}
+      <p><strong>Experience:</strong> {{ doctor.experience }} years</p>
+    {% endif %}
+    <p><strong>Location:</strong> {{ doctor.location }}</p>
+  </div>
+
+  <!-- Appointment booking form -->
+  <!-- CSRF protection: Required for POST requests in Django -->
+  <!-- Form submits to book_appointment view which creates Appointment object -->
+  <form method="POST" style="max-width: 500px;">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 15px;">
+      <label for="appointment_time" style="display: block; margin-bottom: 5px; font-weight: bold;">
+        Select Date & Time:
+      </label>
+      <!-- datetime-local input: Browser-native date/time picker -->
+      <input 
+        type="datetime-local" 
+        id="appointment_time" 
+        name="appointment_time" 
+        required
+        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+      >
+      <small style="color: #666; display: block; margin-top: 5px;">
+        Please select a date and time for your appointment
+      </small>
+    </div>
+
+    <div>
+      <button type="submit" class="btn">Book Appointment</button>
+      <a href="{% url 'doctor_list' %}" style="margin-left: 10px; color: #666; text-decoration: none;">
+        Cancel
+      </a>
+    </div>
+  </form>
+{% endblock %}
