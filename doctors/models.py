@@ -11,3 +11,14 @@ class Doctor(models.Model):
 
     def __str__(self):
         return f"Dr. {self.user.first_name} {self.user.last_name} ({self.specialization})"
+    
+
+class CachedHospital(models.Model):
+    name = models.CharField(max_length=200)
+    lat = models.FloatField()
+    lng = models.FloatField()
+    address = models.CharField(max_length=300, blank=True)
+    fetched_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
