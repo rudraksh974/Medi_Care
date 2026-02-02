@@ -22,5 +22,5 @@ urlpatterns = [
     path('', include('prediction.urls')),  # home & prediction routes
     path('users/', include('users.urls')),      # user system
     path('doctors/', include('doctors.urls')),  # doctors module
-    # path('appointments/', include('appointments.urls')),  # appointment flow /// kch path nhi hai abhi appointments me 
+    path('appointments/', include('appointments.urls')),  # appointment flow 
 ]
