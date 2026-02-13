@@ -959,20 +959,20 @@
         .cta {
             position: relative;
             padding: 5rem 1rem;
-            background: linear-gradient(135deg, var(--color-primary) 0%, hsl(200, 85%, 35%) 100%);
+            background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
             overflow: hidden;
         }
 
         .cta-bg-circle {
             position: absolute;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 47, 255, 0.1);
         }
 
         .cta-bg-circle-1 {
             top: 2rem;
             left: 2rem;
-            width: 10rem;
+            width: -9rem;
             height: 10rem;
         }
 
@@ -1000,7 +1000,7 @@
 
         .cta-title {
             font-size: 2rem;
-            color: white;
+            color: rgb(84, 34, 34);
             margin-bottom: 1.5rem;
         }
 
@@ -1021,13 +1021,13 @@
         }
 
         .btn-cta-outline {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(93, 15, 15, 0.1);
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(68, 22, 102, 0.3);
         }
 
         .btn-cta-outline:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(101, 96, 96, 0.2);
         }
 
         @media (min-width: 640px) {

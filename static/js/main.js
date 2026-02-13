@@ -1,4 +1,3 @@
-// Mobile Navigation Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const navbarToggle = document.getElementById('navbarToggle');
     const navbarMobile = document.getElementById('navbarMobile');
@@ -13,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeIcon) closeIcon.style.display = isOpen ? 'block' : 'none';
         });
 
-        // Close mobile menu when clicking on a link
         const mobileLinks = navbarMobile.querySelectorAll('a');
         mobileLinks.forEach(function(link) {
             link.addEventListener('click', function() {
@@ -23,8 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
         anchor.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
@@ -45,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Navbar background change on scroll
     const navbar = document.getElementById('navbar');
     if (navbar) {
         window.addEventListener('scroll', function() {
@@ -56,8 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // Intersection Observer for fade-in animations
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -72,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, observerOptions);
 
-    // Observe feature cards and step items
     document.querySelectorAll('.feature-card, .step, .why-item').forEach(function(el) {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
