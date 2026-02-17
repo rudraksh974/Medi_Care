@@ -3,42 +3,73 @@
 {% block title %}Doctor Dashboard | MediPredict{% endblock %}
 
 {% block content %}
-  <h1>Welcome, Dr. {{ user.get_full_name|default:user.username }}!</h1>
-  <p>You are logged in as a <strong>Doctor</strong>.</p>
-
-  {% if user.doctor_profile %}
-    <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 4px;">
-      <p><strong>Specialization:</strong> {{ user.doctor_profile.specialization }}</p>
-      <p><strong>Experience:</strong> {{ user.doctor_profile.experience|default:"Not set" }} years</p>
-      <p><strong>Location:</strong> {{ user.doctor_profile.location }}</p>
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Doctor Dashboard</h1>
+        <p>Manage your appointments and profile</p>
     </div>
-  {% endif %}
 
-  <div style="margin-top: 30px;">
-    <h2>Quick Actions</h2>
-    <ul style="list-style: none; padding: 0;">
-      <li style="margin-bottom: 15px;">
-        <a href="{% url 'doctor_appointments' %}" class="btn">View Appointments</a>
-        <span style="margin-left: 10px; color: #666;">Manage and approve/reject patient appointments</span>
-      </li>
-      <li style="margin-bottom: 15px;">
-        <a href="{% url 'edit_doctor_profile' %}" class="btn">Edit Profile</a>
-        <span style="margin-left: 10px; color: #666;">Update your profile information</span>
-      </li>
-    </ul>
-  </div>
-
-  <!-- Simple status overview -->
-  {% if user.doctor_profile %}
-    <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-      <h3>Status Overview</h3>
-      <p><strong>Availability:</strong> 
-        {% if user.doctor_profile.available %}
-          <span style="color: #28a745;">Available</span>
-        {% else %}
-          <span style="color: #dc3545;">Not Available</span>
-        {% endif %}
-      </p>
+    <!-- Welcome Card -->
+    <div class="dashboard-welcome">
+        <div class="dashboard-welcome-icon">👨‍⚕️</div>
+        <div class="dashboard-welcome-content">
+            <h2>Welcome, Dr. {{ user.get_full_name|default:user.username }}!</h2>
+            <p>You are logged in as a <strong>Doctor</strong></p>
+        </div>
     </div>
-  {% endif %}
+
+    {% if user.doctor_profile %}
+        <!-- Profile Information Card -->
+        <div class="dashboard-profile-card">
+            <h3>Profile Information</h3>
+            <div class="profile-info">
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Specialization</span>
+                    <span class="profile-info-value">{{ user.doctor_profile.specialization }}</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Experience</span>
+                    <span class="profile-info-value">{{ user.doctor_profile.experience|default:"Not set" }} years</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Location</span>
+                    <span class="profile-info-value">{{ user.doctor_profile.location }}</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Availability</span>
+                    <span class="profile-info-value {% if user.doctor_profile.available %}status-available{% else %}status-unavailable{% endif %}">
+                        {% if user.doctor_profile.available %}
+                            Available
+                        {% else %}
+                            Not Available
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Quick Actions Section -->
+    <div class="dashboard-actions">
+        <h2>Quick Actions</h2>
+        <div class="dashboard-actions-grid">
+            <!-- View Appointments Card -->
+            <a href="{% url 'doctor_appointments' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">📋</div>
+                <h3>View Appointments</h3>
+                <p>Manage and approve/reject patient appointments. Review all appointment requests.</p>
+                <span class="btn btn-primary">Manage Appointments</span>
+            </a>
+
+            <!-- Edit Profile Card -->
+            <a href="{% url 'edit_doctor_profile' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">✏️</div>
+                <h3>Edit Profile</h3>
+                <p>Update your profile information, specialization, experience, and availability status.</p>
+                <span class="btn btn-primary">Edit Profile</span>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

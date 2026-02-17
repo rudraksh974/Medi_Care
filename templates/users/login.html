@@ -3,14 +3,63 @@
 {% block title %}Login | MediPredict{% endblock %}
 
 {% block content %}
-  <h1>Login 🩺</h1>
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-  </form>
-  <p>Don’t have an account?
-    <a href="{% url 'patient_signup' %}">Signup as Patient</a> |
-    <a href="{% url 'doctor_signup' %}">Signup as Doctor</a>
-  </p>
+<div class="auth-wrapper">
+    <!-- Left Sidebar (Visual) -->
+    <div class="auth-sidebar fade-in">
+        <div class="auth-sidebar-content">
+            <div class="auth-sidebar-logo">🩺</div>
+            <h2>Welcome Back!</h2>
+            <p>Access your healthcare dashboard, manage appointments, and connect with top doctors.</p>
+        </div>
+    </div>
+
+    <!-- Right Content (Form) -->
+    <div class="auth-main slide-up">
+        <div class="auth-form-container">
+            <h1 class="auth-title">Login</h1>
+            <p class="auth-subtitle">Please enter your credentials to continue</p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="form-group">
+                    <div class="errorlist">
+                        {% for error in form.non_field_errors %}
+                        <div style="color: var(--danger); margin-bottom: 10px;">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="auth-form-group">
+                    <label for="{{ form.username.id_for_label }}">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                    <div class="errorlist" style="color: var(--danger); font-size: 0.8em; margin-top: 5px;">{{
+                        form.username.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="auth-form-group">
+                    <label for="{{ form.password.id_for_label }}">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                    <div class="errorlist" style="color: var(--danger); font-size: 0.8em; margin-top: 5px;">{{
+                        form.password.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="auth-btn">Sign In</button>
+            </form>
+
+            <div class="auth-footer-text">
+                <p>Don't have an account? <br>
+                    <a href="{% url 'patient_signup' %}">Sign up as Patient</a> or
+                    <a href="{% url 'doctor_signup' %}">Doctor</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

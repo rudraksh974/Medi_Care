@@ -3,24 +3,50 @@
 {% block title %}Patient Dashboard | MediPredict{% endblock %}
 
 {% block content %}
-  <h1>Welcome, {{ user.username }}!</h1>
-  <p>You are logged in as a <strong>Patient</strong>.</p>
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Patient Dashboard</h1>
+        <p>Manage your healthcare appointments and services</p>
+    </div>
 
-  <div style="margin-top: 30px;">
-    <h2>Quick Actions</h2>
-    <ul style="list-style: none; padding: 0;">
-      <li style="margin-bottom: 15px;">
-        <a href="{% url 'predict_disease' %}" class="btn">Predict Disease</a>
-        <span style="margin-left: 10px; color: #666;">Check your symptoms and get predictions</span>
-      </li>
-      <li style="margin-bottom: 15px;">
-        <a href="{% url 'doctor_list' %}" class="btn">Book Appointment</a>
-        <span style="margin-left: 10px; color: #666;">Find and book appointments with doctors</span>
-      </li>
-      <li style="margin-bottom: 15px;">
-        <a href="{% url 'patient_appointments' %}" class="btn">View My Appointments</a>
-        <span style="margin-left: 10px; color: #666;">See all your scheduled appointments</span>
-      </li>
-    </ul>
-  </div>
+    <!-- Welcome Card -->
+    <div class="dashboard-welcome">
+        <div class="dashboard-welcome-icon">👤</div>
+        <div class="dashboard-welcome-content">
+            <h2>Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+            <p>You are logged in as a <strong>Patient</strong></p>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="dashboard-actions">
+        <h2>Quick Actions</h2>
+        <div class="dashboard-actions-grid">
+            <!-- Predict Disease Card -->
+            <a href="{% url 'predict_disease' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">🔬</div>
+                <h3>Predict Disease</h3>
+                <p>Check your symptoms and get AI-powered disease predictions to understand your health better.</p>
+                <span class="btn btn-primary">Get Started</span>
+            </a>
+
+            <!-- Book Appointment Card -->
+            <a href="{% url 'doctor_list' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">📅</div>
+                <h3>Book Appointment</h3>
+                <p>Find and book appointments with verified doctors. Choose your preferred time slot.</p>
+                <span class="btn btn-primary">Find Doctors</span>
+            </a>
+
+            <!-- View Appointments Card -->
+            <a href="{% url 'patient_appointments' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">📋</div>
+                <h3>My Appointments</h3>
+                <p>View all your scheduled appointments, check status, and manage your bookings.</p>
+                <span class="btn btn-primary">View All</span>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,19 +1,77 @@
 {% extends 'base.html' %}
 
-{% block title %}Signup | MediPredict{% endblock %}
+{% block title %}
+{% if role == 'doctor' %}Doctor Signup{% else %}Patient Signup{% endif %} | MediPredict
+{% endblock %}
 
 {% block content %}
-  <h2>
-    {% if role == 'doctor' %}
-      Doctor Signup
-    {% else %}
-      Patient Signup
-    {% endif %}
-  </h2>
+<div class="auth-wrapper">
+    <!-- Left Sidebar (Visual) with Role specific content -->
+    <div class="auth-sidebar fade-in">
+        <div class="auth-sidebar-content">
+            <div class="auth-sidebar-logo">
+                {% if role == 'doctor' %}👨‍⚕️{% else %}👤{% endif %}
+            </div>
+            <h2>
+                {% if role == 'doctor' %}
+                Join as a Doctor
+                {% else %}
+                Join as a Patient
+                {% endif %}
+            </h2>
+            <p>
+                {% if role == 'doctor' %}
+                Connect with patients, manage your schedule, and grow your practice.
+                {% else %}
+                Find the right doctor, book appointments, and take control of your health.
+                {% endif %}
+            </p>
+        </div>
+    </div>
 
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Sign Up</button>
-  </form>
+    <!-- Right Content (Form) -->
+    <div class="auth-main slide-up">
+        <div class="auth-form-container">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">
+                {% if role == 'doctor' %}Doctor Registration{% else %}Patient Registration{% endif %}
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="form-group">
+                    <div class="errorlist">
+                        {% for error in form.non_field_errors %}
+                        <div style="color: var(--danger); margin-bottom: 10px;">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div class="auth-form-group">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %}<span style="color: var(--danger);">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="errorlist" style="color: var(--danger); font-size: 0.8em; margin-top: 5px;">{{
+                        field.errors }}</div>
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="auth-btn">Sign Up</button>
+            </form>
+
+            <div class="auth-footer-text">
+                <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
