@@ -1,78 +1,430 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Available Doctors | MediPredict{% endblock %}
+{% block title %}Available Doctors | MediCare{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/doctor_list.css' %}?v=1.1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  #map-container {
+    height: 400px;
+    /* Taller for modal */
+    width: 100%;
+    margin-top: 15px;
+    border-radius: 12px;
+    z-index: 1;
+    background-color: #1a1a2e;
+    /* Dark background while loading */
+  }
+
+  .radius-control {
+    color: white;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Map Modal Styles */
+  .map-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-modal-content {
+    background: #1a1a2e;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .btn-modal {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-cancel-modal {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .btn-confirm-modal {
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Available Doctors 👨‍⚕️👩‍⚕️</h1>
+<div class="doctors-container">
+  <!-- Header Section -->
+  <div class="doctors-header">
+    <div class="header-content">
+      <h1>Find the Right Doctor</h1>
+      <p class="subtitle">Browse our verified doctors and nearby healthcare facilities</p>
 
-  <p>Doctors For Booking: {{ doctors|length }}</p>
-  <p>External doctors count: {{ external_doctors|length }}</p>
-  <!-- ================= REGISTERED DOCTORS ================= -->
-  <h2>Registered Doctors</h2>
-
-  {% if doctors %}
-    {% for doctor in doctors %}
-      <div class="doctor-card" style="border:1px solid #ccc; padding:15px; border-radius:10px; margin-bottom:15px; background:#f9f9f9;">
-        <h2>Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h2>
-        <p><b>Specialization:</b> {{ doctor.specialization }}</p>
-
-        {% if doctor.experience %}
-          <p><b>Experience:</b> {{ doctor.experience }} years</p>
-        {% endif %}
-
-        <p><b>Location:</b> {{ doctor.location }}</p>
-
-        {% if doctor.phone %}
-          <p><b>Phone:</b> {{ doctor.phone }}</p>
-        {% endif %}
-
-        {% if user.is_authenticated and user.is_patient %}
-          <div style="margin-top: 15px;">
-            <a href="{% url 'book_appointment' doctor.id %}" class="btn">
-              Book Appointment
-            </a>
+      <form method="GET" action="{% url 'doctor_list' %}" class="search-form" id="searchForm"
+        style="margin-top: 1.5rem; max-width: 500px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <div class="input-wrapper" style="position: relative; flex: 1;">
+            <input type="text" name="location" id="locationInput" placeholder="Search city or select on map"
+              value="{{ current_location }}"
+              style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white; backdrop-filter: blur(5px);">
           </div>
-        {% elif not user.is_authenticated %}
-          <p style="color: #666; font-size: 14px;">
-            <a href="{% url 'login' %}">Login</a> as a patient to book an appointment
-          </p>
-        {% endif %}
-      </div>
-    {% endfor %}
-  {% else %}
-    <p style="color:#666;">No registered doctors available.</p>
-  {% endif %}
-
-  <hr style="margin:40px 0;">
-
-  <!-- ================= EXTERNAL DOCTORS (OSM) ================= -->
-  <h2>Nearby Hospitals & Clinics (External)</h2>
-
-  {% if external_doctors %}
-    {% for doc in external_doctors %}
-      <div class="doctor-card" style="border:1px dashed #aaa; padding:15px; border-radius:10px; margin-bottom:15px; background:#fff;">
-        <h3>{{ doc.name }}</h3>
-        <p><b>Address:</b> {{ doc.address }}</p>
-
-        <div style="margin-top: 10px;">
-          <a
-            href="https://www.openstreetmap.org/?mlat={{ doc.lat }}&mlon={{ doc.lng }}"
-            target="_blank"
-            class="btn"
-            style="background:#eee; color:#333;"
-          >
-            View on Map
-          </a>
+          <button type="button" id="toggleMapBtn"
+            style="padding: 0 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">
+            Map 📍
+          </button>
+          <button type="submit" class="btn-search"
+            style="padding: 0 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00b4db, #0083b0); color: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            Search
+          </button>
         </div>
 
-        <p style="font-size:13px; color:#777; margin-top:8px;">
-          External doctor • Appointment not available
-        </p>
-      </div>
-    {% endfor %}
-  {% else %}
-    <p style="color:#666;">No nearby hospitals found.</p>
-  {% endif %}
+        <div class="radius-control">
+          <label for="radius">Radius: <span id="radiusVal">{% widthratio current_radius|default:5000 1000 1 %}</span>
+            km</label>
+          <input type="range" id="radius" name="radius" min="1000" max="50000" step="1000"
+            value="{{ current_radius|default:5000 }}" style="flex:1;">
+        </div>
 
+        <input type="hidden" name="lat" id="latInput" value="{{ current_lat|default:'' }}">
+        <input type="hidden" name="lng" id="lngInput" value="{{ current_lng|default:'' }}">
+      </form>
+    </div>
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="map-modal">
+      <div class="map-modal-content">
+        <h3 style="color: white; margin-bottom: 10px;">Select Location</h3>
+        <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 15px;">Click or drag the marker to your location.</p>
+
+        <div id="map-container"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-modal btn-cancel-modal" id="closeMapBtn">Cancel</button>
+          <button type="button" class="btn-modal btn-confirm-modal" id="confirmMapBtn">Confirm Location</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ doctors|length }}</span>
+        <span class="stat-label" style="color: rgb(250, 247, 247);">Verified Doctors</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ external_doctors|length }}</span>
+        <span class="stat-label" style="color: rgb(250, 247, 247);">Nearby Facilities</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-tab="registered">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 11l3 3L22 4"></path>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+      </svg>
+      Registered Doctors
+      <span class="tab-count">{{ doctors|length }}</span>
+    </button>
+    <button class="tab-btn" data-tab="external">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+      Nearby Facilities
+      <span class="tab-count">{{ external_doctors|length }}</span>
+    </button>
+  </div>
+
+  <!-- Registered Doctors Section -->
+  <div class="doctors-section" id="registered-section">
+    {% if doctors %}
+    <div class="doctors-grid">
+      {% for doctor in doctors %}
+      <div class="doctor-card registered">
+        <div class="card-header">
+          <div class="doctor-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="doctor-info">
+            <h3 class="doctor-name">Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h3>
+            <span class="verified-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Verified
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+              </path>
+            </svg>
+            <span><strong>Specialization:</strong> {{ doctor.specialization }}</span>
+          </div>
+
+          {% if doctor.experience %}
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+              </path>
+            </svg>
+            <span><strong>Experience:</strong> {{ doctor.experience }} years</span>
+          </div>
+          {% endif %}
+
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span><strong>Location:</strong> {{ doctor.location }}</span>
+          </div>
+
+          {% if doctor.phone %}
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+              </path>
+            </svg>
+            <span><strong>Phone:</strong> {{ doctor.phone }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="card-footer">
+          {% if user.is_authenticated and user.is_patient %}
+          <a href="{% url 'book_appointment' doctor.id %}" class="btn-book">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Book Appointment
+          </a>
+          {% elif not user.is_authenticated %}
+          <p class="login-prompt">
+            <a href="{% url 'login' %}">Login</a> as a patient to book an appointment
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <p>No registered doctors available at the moment</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- External Doctors Section -->
+  <div class="doctors-section hidden" id="external-section">
+    {% if external_doctors %}
+    <div class="doctors-grid">
+      {% for doc in external_doctors %}
+      <div class="doctor-card external">
+        <div class="card-header">
+          <div class="facility-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+              </path>
+            </svg>
+          </div>
+          <div class="doctor-info">
+            <h3 class="doctor-name">{{ doc.name }}</h3>
+            <span class="external-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
+              </svg>
+              External
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>{{ doc.address }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <a href="https://www.openstreetmap.org/?mlat={{ doc.lat }}&mlon={{ doc.lng }}" target="_blank"
+            class="btn-map">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
+              </path>
+            </svg>
+            View on Map
+          </a>
+          <p class="external-note">Appointment booking not available</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+      <p>No nearby healthcare facilities found</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/doctor_list.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('toggleMapBtn');
+    const mapModal = document.getElementById('mapModal');
+    const closeBtn = document.getElementById('closeMapBtn');
+    const confirmBtn = document.getElementById('confirmMapBtn');
+
+    const latInput = document.getElementById('latInput');
+    const lngInput = document.getElementById('lngInput');
+    const locationInput = document.getElementById('locationInput');
+    const radiusInput = document.getElementById('radius');
+    const radiusVal = document.getElementById('radiusVal');
+
+    let map = null;
+    let marker = null;
+    let tempLat = null;
+    let tempLng = null;
+
+    // Default or Current Coords
+    let currentLat = parseFloat("{{ current_lat|default:'28.6315' }}");
+    let currentLng = parseFloat("{{ current_lng|default:'77.2167' }}");
+
+    // Radius Slider Update
+    radiusInput.addEventListener('input', function () {
+      radiusVal.textContent = Math.round(this.value / 1000);
+    });
+
+    // Open Modal
+    toggleBtn.addEventListener('click', function () {
+      mapModal.style.display = 'flex';
+      if (!map) {
+        // Initialize map slightly after display:flex to ensure container has size
+        setTimeout(initMap, 100);
+      } else {
+        setTimeout(() => map.invalidateSize(), 100);
+      }
+    });
+
+    // Close Modal
+    closeBtn.addEventListener('click', function () {
+      mapModal.style.display = 'none';
+    });
+
+    // Confirm Selection
+    confirmBtn.addEventListener('click', function () {
+      if (tempLat && tempLng) {
+        latInput.value = tempLat;
+        lngInput.value = tempLng;
+        locationInput.value = "Selected on Map (" + tempLat.toFixed(4) + ", " + tempLng.toFixed(4) + ")";
+        mapModal.style.display = 'none';
+      } else {
+        alert("Please select a location on the map.");
+      }
+    });
+
+    function initMap() {
+      // Use existing value if available, else default
+      tempLat = latInput.value ? parseFloat(latInput.value) : currentLat;
+      tempLng = lngInput.value ? parseFloat(lngInput.value) : currentLng;
+
+      map = L.map('map-container').setView([tempLat, tempLng], 12);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      marker = L.marker([tempLat, tempLng], { draggable: true }).addTo(map);
+
+      // Update temp coords on drag
+      marker.on('dragend', function (e) {
+        const pos = e.target.getLatLng();
+        tempLat = pos.lat;
+        tempLng = pos.lng;
+      });
+
+      // Map click moves marker
+      map.on('click', function (e) {
+        marker.setLatLng(e.latlng);
+        tempLat = e.latlng.lat;
+        tempLng = e.latlng.lng;
+      });
+    }
+  });
+</script>
 {% endblock %}
