@@ -23,6 +23,11 @@ class Appointment(models.Model):
         choices=STATUS_CHOICES,
         default='Pending'
     )
+    appointment_mode = models.CharField(
+        max_length=10,
+        choices=[('Offline', 'Offline'), ('Online', 'Online')],
+        default='Offline'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
