@@ -56,23 +56,12 @@ def update_appointment_status(request, appointment_id):
 
 
 
-# Patient clicks "Book Appointment" 
-# → doctor_list.html (shows all doctors)
-# → Click "Book Appointment" button 
-# → book_appointment.html (form)
-# → POST request to book_appointment view
-# → Appointment.objects.create() with status='Pending'
-# → Redirect to patient_appointments
-
 @login_required
 def video_call(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
-
-    # Security Check: User must be doctor or patient
     if request.user != appointment.patient and request.user != appointment.doctor.user:
         return redirect('home')
 
-    # Security Check: Appointment must be Approved and Online
     if appointment.status != 'Approved' or appointment.appointment_mode != 'Online':
         return redirect('home')
 
