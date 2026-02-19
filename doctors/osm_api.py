@@ -10,9 +10,6 @@ HEADERS = {
 }
 
 def get_coordinates(place_name):
-    """
-    Convert a place name (city, address) to lat/lng using Nominatim.
-    """
     url = "https://nominatim.openstreetmap.org/search"
     params = {
         "q": place_name,
@@ -33,9 +30,6 @@ def get_coordinates(place_name):
     return None
 
 def get_nearby_hospitals(lat, lng, radius=5000):
-    """
-    Fetch hospitals from OSM within a given radius (meters).
-    """
     query = f"""
     [out:json][timeout:25];
     node["amenity"="hospital"](around:{radius},{lat},{lng});
@@ -78,7 +72,7 @@ def get_nearby_hospitals(lat, lng, radius=5000):
              pass
 
         name = tags.get("name")
-        if not name:
+        if not name or name.lower() in ["unknown hospital", "hospital"]:
             continue
 
         results.append({
