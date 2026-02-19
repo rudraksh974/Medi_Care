@@ -21,70 +21,45 @@ def doctor_list(request):
     except:
         radius = 5000
 
-    # Default: New Delhi
-    lat, lng = 28.6315, 77.2167
-    use_cache = True
+    # Remove Default Location (lat, lng = None)
+    lat, lng = None, None
+    external_doctors = []
     
     if lat_param and lng_param:
-        # User selected a point on the map
         try:
             lat = float(lat_param)
             lng = float(lng_param)
-            use_cache = False
             print(f"Searching by Coords: {lat}, {lng}, Radius: {radius}")
         except ValueError:
             print("Invalid coordinates provided")
 
     elif location_query:
-        # User typed a location
         print(f"Searching for location: {location_query}")
         coords = osm_api.get_coordinates(location_query)
         if coords:
             lat, lng = coords
-            use_cache = False # Don't use/pollute cache for custom searches
         else:
-            print("Location not found, using default.")
+            print("Location not found.")
 
     # Only filter registered doctors if a text location is provided
     if location_query:
          doctors = doctors.filter(location__icontains=location_query)
 
-    # Cache data upto (24 hours)
-    cache_time = now() - timedelta(hours=24)
-    
-    # Note: We only use cache if NO custom search (text or map) was done
-    if use_cache:
-        cached = CachedHospital.objects.filter(fetched_at__gte=cache_time)
-        if cached.exists():
-            # Use cached data
-            external_doctors = list(cached.values(
-                "name", "lat", "lng", "address"
-            ))
-            print("USING CACHED OSM DATA")
-        else:
-            # Cache empty or expired → call API
-            external_doctors = osm_api.get_nearby_hospitals(lat, lng)
-            print("FETCHING FROM OSM API")
-
-            # Clear old cache
-            CachedHospital.objects.all().delete()
-
-            # Save new cache
-            for doc in external_doctors:
-                CachedHospital.objects.create(
-                    name=doc["name"],
-                    lat=doc["lat"],
-                    lng=doc["lng"],
-                    address=doc["address"]
-                )
-    else:
+    if lat and lng:
         # Direct fetch for custom location/coords
         print(f"FETCHING FROM OSM API (Custom Location: {lat}, {lng})")
         external_doctors = osm_api.get_nearby_hospitals(lat, lng, radius=radius)
 
 
+    specialization_query = request.GET.get('specialization')
+    if specialization_query:
+        doctors = doctors.filter(specialization=specialization_query)
+    specializations = [c[0] for c in Doctor.SPECIALIZATION_CHOICES]
+
     return render(request, "doctors/doctor_list.html", {
         "doctors": doctors,
+        "specializations": specializations,
+        "selected_specialization": specialization_query,
         "external_doctors": external_doctors,
         "current_location": location_query or "",
         "current_lat": lat,
