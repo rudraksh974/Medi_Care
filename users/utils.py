@@ -9,6 +9,7 @@ def send_otp_email(email):
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [email]
     
+    print(f"DEBUG OTP: Generated OTP for {email} is {otp}")
     try:
         send_mail(subject, message, email_from, recipient_list)
         return otp

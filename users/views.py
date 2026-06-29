@@ -7,6 +7,9 @@ from django.contrib.auth import get_user_model
 from .decorators import patient_required, doctor_required
 from .utils import send_otp_email
 from django.contrib import messages
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import os
 
 
 
@@ -42,7 +45,7 @@ def patient_signup_view(request):
 # DOCTOR SIGNUP
 def doctor_signup_view(request):
     if request.method == 'POST':
-        form = DoctorSignupForm(request.POST)
+        form = DoctorSignupForm(request.POST, request.FILES)
         if form.is_valid():
             # Send OTP
             email = form.cleaned_data.get('email')
@@ -53,6 +56,15 @@ def doctor_signup_view(request):
                 request.session['signup_data'] = request.POST
                 request.session['signup_otp'] = otp
                 request.session['signup_role'] = 'doctor'
+                
+                # Save uploaded file temporarily
+                if 'verification_document' in request.FILES:
+                    uploaded_file = request.FILES['verification_document']
+                    temp_path = default_storage.save(
+                        f'temp_certificates/{uploaded_file.name}',
+                        ContentFile(uploaded_file.read())
+                    )
+                    request.session['signup_temp_file'] = temp_path
                 return redirect('verify_otp')
             else:
                 messages.error(request, "Error sending OTP. Please try again.")
@@ -95,6 +107,7 @@ def verify_otp_view(request):
 
             elif role == 'doctor':
                 form = DoctorSignupForm(signup_data)
+                form.fields['verification_document'].required = False
                 if form.is_valid():
                     user = form.save(commit=False)
                     user.is_doctor = True
@@ -102,18 +115,45 @@ def verify_otp_view(request):
                     user.save()
 
                     location = form.cleaned_data.get('location', 'Not set')
-                    Doctor.objects.create(
+                    specialization = form.cleaned_data.get('specialization', 'General Physician')
+                    appointment_mode_preference = form.cleaned_data.get('appointment_mode_preference', 'Both')
+                    lat = form.cleaned_data.get('lat')
+                    lng = form.cleaned_data.get('lng')
+                    registration_number = form.cleaned_data.get('registration_number')
+                    state_council = form.cleaned_data.get('state_council')
+                    
+                    doctor = Doctor(
                         user=user,
-                        specialization='General',
+                        specialization=specialization,
+                        appointment_mode_preference=appointment_mode_preference,
+                        lat=lat,
+                        lng=lng,
                         experience=0,
-                        location=location
+                        location=location,
+                        registration_number=registration_number,
+                        state_council=state_council,
+                        is_verified=False  # Must be manually verified by admin
                     )
+                    
+                    temp_file_path = request.session.get('signup_temp_file')
+                    if temp_file_path and default_storage.exists(temp_file_path):
+                        with default_storage.open(temp_file_path) as f:
+                            doctor.verification_document.save(
+                                os.path.basename(temp_file_path),
+                                ContentFile(f.read()),
+                                save=False
+                            )
+                        default_storage.delete(temp_file_path)
+                    
+                    doctor.save()
                     login(request, user)
                     
                     # Cleanup session
                     del request.session['signup_data']
                     del request.session['signup_otp']
                     del request.session['signup_role']
+                    if 'signup_temp_file' in request.session:
+                        del request.session['signup_temp_file']
                     
                     return redirect('doctor_dashboard')
         else:
