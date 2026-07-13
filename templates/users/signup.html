@@ -4,6 +4,15 @@
 {% if role == 'doctor' %}Doctor Signup{% else %}Patient Signup{% endif %} | MediPredict
 {% endblock %}
 
+{% block extra_head %}
+{% if role == 'doctor' %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="auth-wrapper">
     <!-- Left Sidebar (Visual) with Role specific content -->
@@ -37,7 +46,7 @@
                 {% if role == 'doctor' %}Doctor Registration{% else %}Patient Registration{% endif %}
             </p>
 
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
@@ -51,7 +60,7 @@
                 {% endif %}
 
                 {% for field in form %}
-                <div class="auth-form-group">
+                <div class="auth-form-group" {% if field.name == 'lat' or field.name == 'lng' %}style="display:none;"{% endif %}>
                     <label for="{{ field.id_for_label }}">
                         {{ field.label }}
                         {% if field.field.required %}<span style="color: var(--danger);">*</span>{% endif %}
@@ -61,7 +70,10 @@
                     <div class="errorlist" style="color: var(--danger); font-size: 0.8em; margin-top: 5px;">{{
                         field.errors }}</div>
                     {% endif %}
-
+                    
+                    {% if field.name == 'location' and role == 'doctor' %}
+                    <div id="signup-map" style="height: 300px; width: 100%; border-radius: 12px; margin-top: 10px; margin-bottom: 20px; z-index: 1; border: 1px solid rgba(255,255,255,0.1);"></div>
+                    {% endif %}
                 </div>
                 {% endfor %}
 
@@ -74,4 +86,60 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if role == 'doctor' %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const latInput = document.querySelector('input[name="lat"]');
+    const lngInput = document.querySelector('input[name="lng"]');
+    const locationInput = document.querySelector('input[name="location"]');
+    
+    if (!latInput || !lngInput || !locationInput) return;
+
+    // Default coordinates: New Delhi
+    let defaultLat = 28.6139;
+    let defaultLng = 77.2090;
+
+    const map = L.map('signup-map').setView([defaultLat, defaultLng], 13);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+    function updateCoordinates(lat, lng) {
+      latInput.value = lat.toFixed(6);
+      lngInput.value = lng.toFixed(6);
+      
+      // Perform reverse geocoding via Nominatim
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.display_name) {
+            locationInput.value = data.display_name;
+          }
+        })
+        .catch(err => console.error("Geocoding error:", err));
+    }
+
+    // Set initial coords on load
+    updateCoordinates(defaultLat, defaultLng);
+
+    marker.on('dragend', function (e) {
+      const pos = e.target.getLatLng();
+      updateCoordinates(pos.lat, pos.lng);
+    });
+
+    map.on('click', function (e) {
+      marker.setLatLng(e.latlng);
+      updateCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}

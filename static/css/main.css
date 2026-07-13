@@ -1765,7 +1765,9 @@ body.dark .navbar {
     font-size: 0.9rem;
 }
 
-.auth-form-group input {
+.auth-form-group input,
+.auth-form-group select,
+.auth-form-group textarea {
     width: 100%;
     padding: 1rem;
     border: 1px solid var(--border-color);
@@ -1776,7 +1778,9 @@ body.dark .navbar {
     color: var(--white);
 }
 
-.auth-form-group input:focus {
+.auth-form-group input:focus,
+.auth-form-group select:focus,
+.auth-form-group textarea:focus {
     border-color: var(--primary);
     background: #1e293b;
     /* Slate 800 */
@@ -1855,4 +1859,156 @@ body.dark .navbar {
         width: 100%;
         padding: 2rem;
     }
+}
+
+/* Doctor Verification Info Card in Signup Page */
+.doctor-verification-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.verification-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.doctor-verification-info p {
+    font-size: 0.8rem;
+    color: var(--secondary);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.verification-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.method-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--secondary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.nmr-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.nmr-link:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Verification Button & Status Messages */
+.btn-verify-credentials {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.btn-verify-credentials:hover:not(:disabled) {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.btn-verify-credentials:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-verify-credentials.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border-color: #10b981;
+    cursor: default;
+}
+
+.btn-verify-credentials.success:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.verify-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: verify-spin 0.8s linear infinite;
+    display: none;
+    position: absolute;
+}
+
+.spinner-inline {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: verify-spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+@keyframes verify-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.verification-status-msg {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.verification-status-msg.checking {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--secondary);
+}
+
+.verification-status-msg.success {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #10b981;
 }

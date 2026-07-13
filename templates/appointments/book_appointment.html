@@ -1,48 +1,498 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Book Appointment | MediPredict{% endblock %}
 
-{% block content %}
-  <h1>Book Appointment</h1>
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/appointment.css' %}?v=1.0">
+{% if doctor.lat and doctor.lng %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+{% endif %}
+<style>
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+    width: 100%;
+  }
 
-  <!-- Doctor details display -->
-  <div style="padding: 15px; background: #e7f3ff; border-radius: 4px; margin-bottom: 20px;">
-    <h2>Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</h2>
-    <p><strong>Specialization:</strong> {{ doctor.specialization }}</p>
-    {% if doctor.experience %}
-      <p><strong>Experience:</strong> {{ doctor.experience }} years</p>
-    {% endif %}
-    <p><strong>Location:</strong> {{ doctor.location }}</p>
+  .slot-btn {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .slot-btn.available {
+    background: rgba(59, 130, 246, 0.08);
+    color: #e2e8f0;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    cursor: pointer;
+  }
+
+  .slot-btn.available:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+
+  .slot-btn.booked {
+    background: rgba(239, 68, 68, 0.04);
+    color: rgba(248, 113, 113, 0.4);
+    border: 1px dashed rgba(239, 68, 68, 0.2);
+    cursor: not-allowed;
+  }
+
+  .slot-btn.selected-slot {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #fff !important;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="appointment-page">
+
+  <div class="appointment-header">
+    <h1>Confirm Your Visit</h1>
+    <p>Secure your slot with our verified specialists</p>
   </div>
 
-  <!-- Appointment booking form -->
-  <!-- CSRF protection: Required for POST requests in Django -->
-  <!-- Form submits to book_appointment view which creates Appointment object -->
-  <form method="POST" style="max-width: 500px;">
-    {% csrf_token %}
-    
-    <div style="margin-bottom: 15px;">
-      <label for="appointment_time" style="display: block; margin-bottom: 5px; font-weight: bold;">
-        Select Date & Time:
-      </label>
-      <!-- datetime-local input: Browser-native date/time picker -->
-      <input 
-        type="datetime-local" 
-        id="appointment_time" 
-        name="appointment_time" 
-        required
-        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
-      >
-      <small style="color: #666; display: block; margin-top: 5px;">
-        Please select a date and time for your appointment
-      </small>
+  <!-- Messages Alert Section -->
+  {% if messages %}
+  <div style="max-width: 800px; margin: 0 auto 20px auto;">
+    {% for message in messages %}
+    <div style="padding: 12px 20px; border-radius: 8px; font-weight: 500; font-size: 0.9rem;
+          {% if message.tags == 'error' %}
+            background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;
+          {% else %}
+            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;
+          {% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="appointment-grid">
+
+    <!-- Doctor Profile Card (Patient View) -->
+    <div class="glass-card doctor-summary" style="height: fit-content;">
+      <div class="doctor-profile-header">
+        <div class="doctor-avatar-large">
+          👨‍⚕️
+        </div>
+        <h2 class="doctor-name-large" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+          Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}
+          {% if doctor.is_verified %}
+          <span class="verified-badge-mini" title="Verified Specialist"
+            style="display: inline-flex; align-items: center; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 50%; padding: 4px;">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </span>
+          {% endif %}
+        </h2>
+        <span class="doctor-specialty">{{ doctor.specialization }}</span>
+      </div>
+
+      <div class="doctor-details-list">
+        <!-- Verification Status -->
+        <div class="detail-item">
+          <div class="detail-icon"
+            style="background: {% if doctor.is_verified %}rgba(16, 185, 129, 0.15){% else %}rgba(245, 158, 11, 0.15){% endif %}; color: {% if doctor.is_verified %}#10b981{% else %}#f59e0b{% endif %}; font-size: 1.1rem;">
+            {% if doctor.is_verified %}🛡️{% else %}🕒{% endif %}
+          </div>
+          <div class="detail-content">
+            <span>Verification Status</span>
+            {% if doctor.is_verified %}
+            <strong style="color: #10b981;">Verified Specialist</strong>
+            {% else %}
+            <strong style="color: #f59e0b;">Pending Verification</strong>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Doctor ID -->
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          </div>
+          <div class="detail-content">
+            <span>Doctor ID</span>
+            <strong>DOC-{{ doctor.id }}</strong>
+          </div>
+        </div>
+
+        {% if doctor.registration_number %}
+        <!-- Doctor MIS ID / Reg No. -->
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 01-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+              </path>
+            </svg>
+          </div>
+          <div class="detail-content">
+            <span>Doctor MIS ID / Reg No.</span>
+            <strong>{{ doctor.registration_number }}</strong>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if doctor.experience %}
+        <!-- Experience -->
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="detail-content">
+            <span>Experience</span>
+            <strong>{{ doctor.experience }} Years</strong>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Allowed Modes -->
+        <div class="detail-item">
+          <div class="detail-icon">📡</div>
+          <div class="detail-content">
+            <span>Consultation Mode Preference</span>
+            <strong>
+              {% if doctor.appointment_mode_preference == 'VC' %}
+              Video Consultation Only
+              {% elif doctor.appointment_mode_preference == 'In-Person' %}
+              In-Clinic Consultation Only
+              {% else %}
+              In-Clinic & Video Consultation
+              {% endif %}
+            </strong>
+          </div>
+        </div>
+
+        <!-- Availability schedule -->
+        <div class="detail-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="detail-icon">📅</div>
+            <div class="detail-content">
+              <span>Availability Schedule</span>
+            </div>
+          </div>
+          <div
+            style="font-size: 0.85rem; color: var(--text-secondary); width: 100%; padding-left: 10px; border-left: 2px solid rgba(59, 130, 246, 0.3);">
+            {% if availabilities %}
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              {% for slot in availabilities %}
+              <div style="display: flex; justify-content: space-between;">
+                <strong style="color: var(--white);">{{ slot.day }}:</strong>
+                <span>{{ slot.start_time|time:"h:i A" }} - {{ slot.end_time|time:"h:i A" }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <span style="font-style: italic; color: #ef4444;">Doctor has not configured availability slots.</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Map Location Pinned -->
+        {% if doctor.lat and doctor.lng %}
+        <div class="detail-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="detail-icon">📍</div>
+            <div class="detail-content">
+              <span>Clinic / Hospital Pinned Location</span>
+            </div>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">{{ doctor.location }}</div>
+          <div id="doctor-clinic-map"
+            style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); z-index: 1;">
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
 
-    <div>
-      <button type="submit" class="btn">Book Appointment</button>
-      <a href="{% url 'doctor_list' %}" style="margin-left: 10px; color: #666; text-decoration: none;">
-        Cancel
-      </a>
+    <!-- Booking Form Card -->
+    <div class="glass-card booking-form">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        Select Date & Time
+      </h2>
+
+      <form method="POST" id="appointmentForm">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label>Select Appointment Type</label>
+          <div class="mode-selector" style="display: flex; gap: 15px; margin-bottom: 15px;">
+            <label style="flex: 1; cursor: pointer; {% if doctor.appointment_mode_preference == 'VC' %}display:none;{% endif %}">
+              <input type="radio" name="appointment_mode" value="Offline" {% if doctor.appointment_mode_preference != 'VC' %}checked{% endif %} style="display: none;" onchange="updateMode(this)">
+              <div class="mode-card {% if doctor.appointment_mode_preference != 'VC' %}selected{% endif %}"
+                style="padding: 15px; border: 1px solid {% if doctor.appointment_mode_preference != 'VC' %}var(--neon-accent){% else %}var(--border-color){% endif %}; border-radius: 12px; background: {% if doctor.appointment_mode_preference != 'VC' %}rgba(59, 130, 246, 0.1){% else %}rgba(255, 255, 255, 0.05){% endif %}; text-align: center; transition: all 0.3s;">
+                <span style="font-size: 1.5rem; display: block; margin-bottom: 5px;">🏥</span>
+                <strong style="color: {% if doctor.appointment_mode_preference != 'VC' %}var(--white){% else %}var(--secondary){% endif %};">In-Clinic</strong>
+              </div>
+            </label>
+            <label style="flex: 1; cursor: pointer; {% if doctor.appointment_mode_preference == 'In-Person' %}display:none;{% endif %}">
+              <input type="radio" name="appointment_mode" value="Online" {% if doctor.appointment_mode_preference == 'VC' %}checked{% endif %} style="display: none;" onchange="updateMode(this)">
+              <div class="mode-card {% if doctor.appointment_mode_preference == 'VC' %}selected{% endif %}"
+                style="padding: 15px; border: 1px solid {% if doctor.appointment_mode_preference == 'VC' %}var(--neon-accent){% else %}var(--border-color){% endif %}; border-radius: 12px; background: {% if doctor.appointment_mode_preference == 'VC' %}rgba(59, 130, 246, 0.1){% else %}rgba(255, 255, 255, 0.05){% endif %}; text-align: center; transition: all 0.3s;">
+                <span style="font-size: 1.5rem; display: block; margin-bottom: 5px;">📹</span>
+                <strong style="color: {% if doctor.appointment_mode_preference == 'VC' %}var(--white){% else %}var(--secondary){% endif %};">Video Call</strong>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="appointment_date">Select Date</label>
+          <input type="date" id="appointment_date" class="custom-input" required>
+          <input type="hidden" id="appointment_time" name="appointment_time" required>
+          
+          <div id="slotWarning"
+            style="display: none; color: #ef4444; font-size: 0.85rem; margin-top: 8px; font-weight: 500; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; margin-bottom: 15px;">
+          </div>
+
+          <label style="display: block; margin-top: 15px; margin-bottom: 10px; font-weight: 600;">Available Time Slots ({{ slot_duration }} min intervals)</label>
+          <div id="timeSlotsContainer" style="min-height: 50px;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">Please select a date first to view available timings.</p>
+          </div>
+        </div>
+
+        <div class="preview-box" id="previewBox" style="display: none;">
+          <div class="preview-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <div class="preview-content">
+            <strong>Selected Slot</strong>
+            <span id="previewText">--/--/---- --:--</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn" disabled>
+          <span>Confirm Appointment</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+        </button>
+
+        <a href="{% url 'doctor_list' %}" class="btn-cancel">Cancel Booking</a>
+      </form>
     </div>
-  </form>
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Initial Availability schedule validation logic
+    const availabilities = JSON.parse('{{ availabilities_json|safe|default:"[]" }}');
+    const bookedSlots = JSON.parse('{{ booked_slots_json|safe|default:"[]" }}');
+    const slotDuration = parseInt('{{ slot_duration|default:"15" }}');
+    
+    const dateInput = document.getElementById("appointment_date");
+    const timeInput = document.getElementById("appointment_time");
+    const slotWarning = document.getElementById("slotWarning");
+    const submitBtn = document.getElementById("submitBtn");
+    const previewBox = document.getElementById("previewBox");
+    const previewText = document.getElementById("previewText");
+    const slotsContainer = document.getElementById("timeSlotsContainer");
+
+    if (!dateInput) return;
+
+    // Set Min Date of dateInput to today
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    dateInput.min = todayStr;
+
+    dateInput.addEventListener("change", () => {
+      const selectedDate = dateInput.value;
+      if (!selectedDate) {
+        slotWarning.style.display = 'none';
+        slotsContainer.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">Please select a date first to view available timings.</p>';
+        previewBox.style.display = 'none';
+        submitBtn.disabled = true;
+        return;
+      }
+      generateTimeSlots(selectedDate);
+      
+      // Reset time selection state
+      timeInput.value = "";
+      previewBox.style.display = 'none';
+      submitBtn.disabled = true;
+    });
+
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const d = new Date();
+      d.setHours(h, m, 0, 0);
+      return d;
+    }
+
+    function formatTime24(date) {
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function formatTime12(date) {
+      const h = date.getHours();
+      const m = String(date.getMinutes()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH}:${m} ${ampm}`;
+    }
+
+    function generateTimeSlots(selectedDateStr) {
+      const dateParts = selectedDateStr.split('-');
+      // Avoid timezone offset issue when creating date object
+      const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const weekday = days[dateObj.getDay()];
+
+      // Filter slots for the selected weekday
+      const daySlots = availabilities.filter(s => s.day === weekday);
+
+      slotsContainer.innerHTML = "";
+      slotWarning.style.display = 'none';
+
+      if (daySlots.length === 0) {
+        slotsContainer.innerHTML = `<p style="color: #ef4444; font-size: 0.9rem; margin: 0;">⚠️ Dr. {{ doctor.user.last_name }} has no availability configured on <strong>${weekday}s</strong>.</p>`;
+        return;
+      }
+
+      let slotsHtml = "";
+      let hasAvailableSlots = false;
+
+      daySlots.forEach(slot => {
+        let current = parseTime(slot.start_time);
+        const end = parseTime(slot.end_time);
+
+        while (current < end) {
+          const timeStr = formatTime24(current);
+          const fullDateTimeStr = `${selectedDateStr}T${timeStr}`;
+
+          // Check if slot is in the past using robust numeric date constructor
+          const [yr, mo, dy] = selectedDateStr.split('-').map(Number);
+          const [hr, mn] = timeStr.split(':').map(Number);
+          const slotDate = new Date(yr, mo - 1, dy, hr, mn, 0, 0);
+          const isPast = slotDate <= new Date();
+
+          // Check if slot is already booked and approved
+          const isBooked = bookedSlots.includes(fullDateTimeStr);
+
+          const displayTimeStr = formatTime12(current);
+
+          if (!isPast) {
+            hasAvailableSlots = true;
+            if (isBooked) {
+              slotsHtml += `
+                <button type="button" class="slot-btn booked" disabled title="Already booked">
+                  ${displayTimeStr} <br><span style="font-size: 0.65rem; opacity: 0.8;">Booked</span>
+                </button>
+              `;
+            } else {
+              slotsHtml += `
+                <button type="button" class="slot-btn available" data-datetime="${fullDateTimeStr}" onclick="selectSlot(this)">
+                  ${displayTimeStr}
+                </button>
+              `;
+            }
+          }
+
+          // Move current time forward by custom slotDuration
+          current = new Date(current.getTime() + slotDuration * 60000);
+        }
+      });
+
+      if (!hasAvailableSlots) {
+        slotsContainer.innerHTML = `<p style="color: #9ca3af; font-size: 0.9rem; font-style: italic; margin: 0;">No active timing slots available for this day.</p>`;
+      } else {
+        slotsContainer.innerHTML = `<div class="slots-grid">${slotsHtml}</div>`;
+      }
+    }
+
+    window.selectSlot = function (btn) {
+      // Remove selected class from all slots
+      document.querySelectorAll('.slot-btn.available').forEach(b => {
+        b.classList.remove('selected-slot');
+      });
+
+      // Add selected class to clicked slot
+      btn.classList.add('selected-slot');
+
+      const datetimeVal = btn.getAttribute('data-datetime');
+      timeInput.value = datetimeVal;
+
+      // Show preview
+      const dateObj = new Date(datetimeVal);
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      previewText.textContent = dateObj.toLocaleDateString('en-US', options);
+      previewBox.style.display = 'flex';
+
+      // Enable submit
+      submitBtn.disabled = false;
+    };
+
+    window.updateMode = function (radio) {
+      document.querySelectorAll('.mode-card').forEach(card => {
+        card.style.borderColor = 'var(--border-color)';
+        card.style.background = 'rgba(255, 255, 255, 0.05)';
+        card.querySelector('strong').style.color = 'var(--secondary)';
+        card.classList.remove('selected');
+      });
+      const selectedInfo = radio.nextElementSibling;
+      selectedInfo.style.borderColor = 'var(--neon-accent)';
+      selectedInfo.style.background = 'rgba(59, 130, 246, 0.1)';
+      selectedInfo.querySelector('strong').style.color = 'var(--white)';
+      selectedInfo.classList.add('selected');
+    };
+
+    // 2. Initialize clinic map
+    {% if doctor.lat and doctor.lng %}
+    const clinicLat = parseFloat("{{ doctor.lat }}");
+    const clinicLng = parseFloat("{{ doctor.lng }}");
+
+    const clinicMap = L.map('doctor-clinic-map', {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([clinicLat, clinicLng], 14);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(clinicMap);
+
+    const marker = L.marker([clinicLat, clinicLng]).addTo(clinicMap);
+    marker.bindPopup(`<strong>Dr. {{ doctor.user.last_name }}'s Clinic</strong><br>{{ doctor.location }}`).openPopup();
+    {% endif %}
+  });
+</script>
+{% endblock %}
+
+{% block extra_js %}
 {% endblock %}

@@ -9,6 +9,8 @@
   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <style>
   #map-container {
     height: 400px;
@@ -17,7 +19,7 @@
     margin-top: 15px;
     border-radius: 12px;
     z-index: 1;
-    background-color: #1a1a2e;
+    background-color: #1e227b;
     /* Dark background while loading */
   }
 
@@ -93,6 +95,9 @@
     background: linear-gradient(135deg, #00b4db, #0083b0);
     color: white;
   }
+  details[open] .chevron-icon-mini {
+    transform: rotate(180deg);
+  }
 </style>
 {% endblock %}
 
@@ -112,7 +117,22 @@
               value="{{ current_location }}"
               style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white; backdrop-filter: blur(5px);">
           </div>
-          <button type="button" id="toggleMapBtn"
+
+          <div class="input-wrapper" style="position: relative; flex: 1;">
+            <select name="specialization" id="start_specialization"
+              style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #1a1a2e; color: white; backdrop-filter: blur(5px);">
+              <option value="">All Specializations</option>
+              {% for spec in specializations %}
+              <option value="{{ spec }}" {% if selected_specialization == spec %}selected{% endif %}>{{ spec }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="button" id="detectLocationBtn" title="Use Current Location"
+            style="padding: 0 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">
+            🎯
+          </button>
+          <button type="button" id="toggleMapBtn" title="Select on Map"
             style="padding: 0 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">
             Map 📍
           </button>
@@ -123,8 +143,7 @@
         </div>
 
         <div class="radius-control">
-          <label for="radius">Radius: <span id="radiusVal">{% widthratio current_radius|default:5000 1000 1 %}</span>
-            km</label>
+          <label for="radius">Radius: <span id="radiusVal">{% widthratio current_radius|default:5000 1000 1 %}</span> km</label>
           <input type="range" id="radius" name="radius" min="1000" max="50000" step="1000"
             value="{{ current_radius|default:5000 }}" style="flex:1;">
         </div>
@@ -137,7 +156,7 @@
     <!-- Map Modal -->
     <div id="mapModal" class="map-modal">
       <div class="map-modal-content">
-        <h3 style="color: white; margin-bottom: 10px;">Select Location</h3>
+        <h3 style="color: rgb(255, 255, 255); margin-bottom: 10px;">Select Location</h3>
         <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 15px;">Click or drag the marker to your location.</p>
 
         <div id="map-container"></div>
@@ -195,12 +214,18 @@
           </div>
           <div class="doctor-info">
             <h3 class="doctor-name">Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h3>
+            {% if doctor.is_verified %}
             <span class="verified-badge">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               Verified
             </span>
+            {% else %}
+            <span class="pending-badge">
+              🕒 Pending Verification
+            </span>
+            {% endif %}
           </div>
         </div>
 
@@ -231,6 +256,51 @@
               <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
             <span><strong>Location:</strong> {{ doctor.location }}</span>
+          </div>
+
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span><strong>Consultation:</strong> 
+              {% if doctor.appointment_mode_preference == 'VC' %}
+                Video Call
+              {% elif doctor.appointment_mode_preference == 'In-Person' %}
+                In-Clinic
+              {% else %}
+                Video Call & In-Clinic
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="info-row" style="align-items: flex-start;">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 2px;">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <details style="width: 100%;">
+              <summary style="cursor: pointer; list-style: none; outline: none; display: flex; align-items: center; gap: 6px; font-weight: bold; color: var(--text-primary);">
+                <strong>Availability</strong>
+                <svg class="chevron-icon-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="transition: transform 0.2s;">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </summary>
+              <div style="margin-top: 6px;">
+                {% if doctor.availabilities.all %}
+                  <ul style="margin: 0; padding-left: 16px; font-size: 0.85rem; color: #a1a1aa; list-style-type: disc;">
+                    {% for availability in doctor.availabilities.all %}
+                      <li>{{ availability.day }}: {{ availability.start_time|time:"g:i A" }} - {{ availability.end_time|time:"g:i A" }}</li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <span style="font-size: 0.85rem; color: #71717a; font-style: italic; margin-top: 2px; display: block;">No availability configured</span>
+                {% endif %}
+              </div>
+            </details>
           </div>
 
           {% if doctor.phone %}
@@ -279,9 +349,18 @@
   <!-- External Doctors Section -->
   <div class="doctors-section hidden" id="external-section">
     {% if external_doctors %}
+    <!-- Nearby Facilities Filter -->
+    <div class="nearby-filters" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="btn-filter-nearby active" data-facility-type="all" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: linear-gradient(135deg, #00b4db, #0083b0); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem; font-weight: 600;">All Facilities</button>
+      <button class="btn-filter-nearby" data-facility-type="Hospital" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🏥 Hospitals</button>
+      <button class="btn-filter-nearby" data-facility-type="Clinic" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🩺 Clinics</button>
+      <button class="btn-filter-nearby" data-facility-type="Doctor" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">👨‍⚕️ Doctors</button>
+      <button class="btn-filter-nearby" data-facility-type="Dentist" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🦷 Dentists</button>
+    </div>
+
     <div class="doctors-grid">
       {% for doc in external_doctors %}
-      <div class="doctor-card external">
+      <div class="doctor-card external" data-facility-type="{{ doc.facility_type|default:'Hospital' }}">
         <div class="card-header">
           <div class="facility-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -292,11 +371,18 @@
           </div>
           <div class="doctor-info">
             <h3 class="doctor-name">{{ doc.name }}</h3>
-            <span class="external-badge">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
-              </svg>
-              External
+            <span class="external-badge" style="background: rgba(0, 180, 219, 0.15); color: #00b4db; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              {% if doc.facility_type == 'Hospital' %}
+                🏥 Hospital
+              {% elif doc.facility_type == 'Clinic' %}
+                🩺 Clinic
+              {% elif doc.facility_type == 'Doctor' %}
+                👨‍⚕️ Doctor
+              {% elif doc.facility_type == 'Dentist' %}
+                🦷 Dentist
+              {% else %}
+                🏥 Hospital
+              {% endif %}
             </span>
           </div>
         </div>
@@ -332,7 +418,11 @@
         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
         <circle cx="12" cy="10" r="3"></circle>
       </svg>
-      <p>No nearby healthcare facilities found</p>
+      {% if not current_lat %}
+      <p>Please enter a location or click the 🎯 button to find nearby facilities.</p>
+      {% else %}
+      <p>No nearby healthcare facilities found in this area</p>
+      {% endif %}
     </div>
     {% endif %}
   </div>
@@ -344,6 +434,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('toggleMapBtn');
+    const detectLocationBtn = document.getElementById('detectLocationBtn');
     const mapModal = document.getElementById('mapModal');
     const closeBtn = document.getElementById('closeMapBtn');
     const confirmBtn = document.getElementById('confirmMapBtn');
@@ -369,31 +460,131 @@
     });
 
     // Open Modal
-    toggleBtn.addEventListener('click', function () {
-      mapModal.style.display = 'flex';
-      if (!map) {
-        // Initialize map slightly after display:flex to ensure container has size
-        setTimeout(initMap, 100);
-      } else {
-        setTimeout(() => map.invalidateSize(), 100);
-      }
-    });
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function () {
+        mapModal.style.display = 'flex';
+        if (!map) {
+          // Initialize map slightly after display:flex to ensure container has size
+          setTimeout(initMap, 100);
+        } else {
+          setTimeout(() => map.invalidateSize(), 100);
+        }
+      });
+    }
 
     // Close Modal
-    closeBtn.addEventListener('click', function () {
-      mapModal.style.display = 'none';
-    });
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        mapModal.style.display = 'none';
+      });
+    }
 
     // Confirm Selection
-    confirmBtn.addEventListener('click', function () {
-      if (tempLat && tempLng) {
-        latInput.value = tempLat;
-        lngInput.value = tempLng;
-        locationInput.value = "Selected on Map (" + tempLat.toFixed(4) + ", " + tempLng.toFixed(4) + ")";
-        mapModal.style.display = 'none';
-      } else {
-        alert("Please select a location on the map.");
-      }
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        if (tempLat && tempLng) {
+          latInput.value = tempLat;
+          lngInput.value = tempLng;
+          locationInput.value = "Selected on Map (" + tempLat.toFixed(4) + ", " + tempLng.toFixed(4) + ")";
+          mapModal.style.display = 'none';
+        } else {
+          alert("Please select a location on the map.");
+        }
+      });
+    }
+
+    // Detect Location Button Event
+    if (detectLocationBtn) {
+      detectLocationBtn.addEventListener('click', function () {
+        if (navigator.geolocation) {
+          detectLocationBtn.textContent = '⏳';
+          detectLocationBtn.disabled = true;
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              latInput.value = lat;
+              lngInput.value = lng;
+              locationInput.value = "Current Location (" + lat.toFixed(4) + ", " + lng.toFixed(4) + ")";
+              detectLocationBtn.textContent = '🎯';
+              detectLocationBtn.disabled = false;
+              document.getElementById('searchForm').submit();
+            },
+            function (error) {
+              console.error("Geolocation error:", error);
+              alert("Unable to retrieve location. Please select a location on the map or type it in manually.");
+              detectLocationBtn.textContent = '🎯';
+              detectLocationBtn.disabled = false;
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        } else {
+          alert("Geolocation is not supported by your browser.");
+        }
+      });
+    }
+
+    // Clear coordinates if the user types in a new location manually
+    if (locationInput) {
+      locationInput.addEventListener('input', function () {
+        latInput.value = '';
+        lngInput.value = '';
+      });
+    }
+
+    // Nearby Facilities Filter Event Listeners
+    const filterButtons = document.querySelectorAll('.btn-filter-nearby');
+    const externalCards = document.querySelectorAll('.doctor-card.external');
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Toggle active class
+        filterButtons.forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'rgba(255,255,255,0.1)';
+          b.style.borderColor = 'rgba(255,255,255,0.2)';
+          b.style.fontWeight = 'normal';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'linear-gradient(135deg, #00b4db, #0083b0)';
+        btn.style.borderColor = 'transparent';
+        btn.style.fontWeight = '600';
+
+        const type = btn.getAttribute('data-facility-type');
+        let visibleCount = 0;
+        
+        externalCards.forEach(card => {
+          const cardType = card.getAttribute('data-facility-type');
+          if (type === 'all' || cardType === type) {
+            card.style.display = 'block';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        
+        // Handle empty matching state
+        const grid = document.querySelector('#external-section .doctors-grid');
+        let noMatchMsg = document.getElementById('noMatchingFacilities');
+        if (visibleCount === 0) {
+          if (!noMatchMsg) {
+            noMatchMsg = document.createElement('div');
+            noMatchMsg.id = 'noMatchingFacilities';
+            noMatchMsg.className = 'empty-state';
+            noMatchMsg.style.width = '100%';
+            noMatchMsg.style.textAlign = 'center';
+            noMatchMsg.style.gridColumn = '1 / -1';
+            noMatchMsg.innerHTML = '<p>No matching healthcare facilities found in this category.</p>';
+            grid.appendChild(noMatchMsg);
+          } else {
+            noMatchMsg.style.display = 'block';
+          }
+        } else {
+          if (noMatchMsg) {
+            noMatchMsg.style.display = 'none';
+          }
+        }
+      });
     });
 
     function initMap() {
@@ -424,6 +615,27 @@
         tempLat = e.latlng.lat;
         tempLng = e.latlng.lng;
       });
+
+      // Add Search Control
+      L.Control.geocoder({
+        defaultMarkGeocode: false
+      })
+        .on('markgeocode', function (e) {
+          var bbox = e.geocode.bbox;
+          var poly = L.polygon([
+            bbox.getSouthEast(),
+            bbox.getNorthEast(),
+            bbox.getNorthWest(),
+            bbox.getSouthWest()
+          ]);
+          map.fitBounds(poly.getBounds());
+
+          var center = e.geocode.center;
+          marker.setLatLng(center);
+          tempLat = center.lat;
+          tempLng = center.lng;
+        })
+        .addTo(map);
     }
   });
 </script>

@@ -80,6 +80,11 @@ class DoctorSignupForm(CustomUserCreationForm):
         required=True,
         label="State Medical Council"
     )
+    registration_year = forms.IntegerField(
+        required=True,
+        label="Registration Year",
+        widget=forms.NumberInput(attrs={'placeholder': 'e.g., 2018', 'min': 1950, 'max': 2026})
+    )
     verification_document = forms.FileField(
         required=True,
         label="Registration Certificate",
@@ -89,5 +94,5 @@ class DoctorSignupForm(CustomUserCreationForm):
     class Meta(CustomUserCreationForm.Meta):
         fields = CustomUserCreationForm.Meta.fields + (
             "specialization", "appointment_mode_preference", "location", "lat", "lng",
-            "registration_number", "state_council", "verification_document"
+            "registration_number", "state_council", "registration_year", "verification_document"
         )

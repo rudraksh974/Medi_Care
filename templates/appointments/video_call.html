@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Video Call | MediPredict{% endblock %}
+
+{% block extra_head %}
+<!-- Jitsi Meet API -->
+<script src='https://meet.jit.si/external_api.js'></script>
+<style>
+    .video-call-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: var(--bg-dark);
+        display: flex;
+        flex-direction: column;
+        z-index: 2000;
+    }
+
+    .call-header {
+        padding: 20px 5%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(15, 23, 42, 0.95);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .call-info h2 {
+        font-size: 1.5rem;
+        color: var(--white);
+        margin-bottom: 5px;
+    }
+
+    .call-info p {
+        color: var(--text-secondary);
+    }
+
+    #jitsi-container {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        background: #000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="video-call-container">
+    <div class="call-header">
+        <div class="call-info">
+            <h2>Video Consultation</h2>
+            <p>
+                with
+                {% if request.user == appointment.patient %}
+                Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}
+                {% else %}
+                {{ appointment.patient.get_full_name|default:appointment.patient.username }}
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% if request.user.doctor_profile %}{% url 'doctor_appointments' %}{% else %}{% url 'patient_appointments' %}{% endif %}"
+            class="btn-cancel" style="padding: 10px 20px;">
+            End Call & Return
+        </a>
+    </div>
+
+    <div id="jitsi-container"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const domain = 'meet.jit.si';
+        const options = {
+            roomName: '{{ room_name }}',
+            width: '100%',
+            height: '100%',
+            parentNode: document.querySelector('#jitsi-container'),
+            userInfo: {
+                displayName: '{{ user_name }}'
+            },
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                prejoinPageEnabled: false
+            },
+            interfaceConfigOverwrite: {
+                TOOLBAR_BUTTONS: [
+                    'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+                    'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+                    'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                    'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
+                    'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone',
+                    'security'
+                ],
+            }
+        };
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        api.addEventListeners({
+            videoConferenceLeft: function () {
+                window.location.href = "{% if request.user.doctor_profile %}{% url 'doctor_appointments' %}{% else %}{% url 'patient_appointments' %}{% endif %}";
+            }
+        });
+    });
+</script>
+{% endblock %}

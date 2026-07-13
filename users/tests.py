@@ -18,6 +18,7 @@ class DoctorSignupTest(TestCase):
             'location': 'Delhi',
             'registration_number': 'MCI-12345',
             'state_council': 'Delhi Medical Council',
+            'registration_year': 2020,
             'password1': 'doctorpass123',
             'password2': 'doctorpass123',
         }

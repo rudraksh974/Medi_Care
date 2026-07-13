@@ -5,6 +5,10 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {% endblock %}
 
 {% block content %}
@@ -21,7 +25,7 @@
                 {% csrf_token %}
 
                 {% for field in form %}
-                <div class="form-group">
+                <div class="form-group" {% if field.name == 'lat' or field.name == 'lng' %}style="display:none;"{% endif %}>
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.help_text %}
@@ -30,6 +34,10 @@
                     {% for error in field.errors %}
                     <div class="text-danger">{{ error }}</div>
                     {% endfor %}
+                    
+                    {% if field.name == 'location' %}
+                    <div id="profile-map" style="height: 300px; width: 100%; border-radius: 12px; margin-top: 10px; margin-bottom: 20px; z-index: 1; border: 1px solid rgba(255,255,255,0.1);"></div>
+                    {% endif %}
                 </div>
                 {% endfor %}
 
@@ -43,11 +51,57 @@
 </div>
 
 <script>
-    // Add custom class to all inputs for styling
     document.addEventListener('DOMContentLoaded', function () {
+        // Add custom class to all inputs for styling
         const inputs = document.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
-            input.classList.add('form-control');
+            if (input.type !== 'checkbox') {
+                input.classList.add('form-control');
+            }
+        });
+
+        // Initialize Map
+        const latInput = document.querySelector('input[name="lat"]');
+        const lngInput = document.querySelector('input[name="lng"]');
+        const locationInput = document.querySelector('input[name="location"]');
+        
+        if (!latInput || !lngInput || !locationInput) return;
+
+        let initLat = latInput.value ? parseFloat(latInput.value) : 28.6139;
+        let initLng = lngInput.value ? parseFloat(lngInput.value) : 77.2090;
+
+        const map = L.map('profile-map').setView([initLat, initLng], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 19
+        }).addTo(map);
+
+        const marker = L.marker([initLat, initLng], { draggable: true }).addTo(map);
+
+        function updateCoordinates(lat, lng) {
+          latInput.value = lat.toFixed(6);
+          lngInput.value = lng.toFixed(6);
+          
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data && data.display_name) {
+                locationInput.value = data.display_name;
+              }
+            })
+            .catch(err => console.error("Geocoding error:", err));
+        }
+
+        marker.on('dragend', function (e) {
+          const pos = e.target.getLatLng();
+          updateCoordinates(pos.lat, pos.lng);
+        });
+
+        map.on('click', function (e) {
+          marker.setLatLng(e.latlng);
+          updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
     });
 </script>

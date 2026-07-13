@@ -10,6 +10,20 @@
         <p>Manage your appointments and profile</p>
     </div>
 
+    {% if user.doctor_profile and not user.doctor_profile.is_verified %}
+    <!-- Pending Verification Banner -->
+    <div class="pending-verification-banner" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: flex-start;">
+        <span style="font-size: 1.5rem; line-height: 1;">🕒</span>
+        <div>
+            <h3 style="color: #f59e0b; margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;">Account Pending Verification</h3>
+            <p style="color: var(--secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">
+                Your medical registration credentials and certificate are currently being reviewed by our administrator team. 
+                You will be visible to patients and allowed to accept appointments once your profile is verified and approved.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Welcome Card -->
     <div class="dashboard-welcome">
         <div class="dashboard-welcome-icon">👨‍⚕️</div>
@@ -66,8 +80,16 @@
             <a href="{% url 'edit_doctor_profile' %}" class="dashboard-action-card">
                 <div class="dashboard-action-icon">✏️</div>
                 <h3>Edit Profile</h3>
-                <p>Update your profile information, specialization, experience, and availability status.</p>
+                <p>Update your profile coordinates/location map, experience, contact details, and availability status.</p>
                 <span class="btn btn-primary">Edit Profile</span>
+            </a>
+
+            <!-- Manage Availability Card -->
+            <a href="{% url 'manage_availability' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">📅</div>
+                <h3>Manage Availability</h3>
+                <p>Configure your consultation schedule, weekly available days, and multiple timing slots.</p>
+                <span class="btn btn-primary">Manage Schedule</span>
             </a>
         </div>
     </div>

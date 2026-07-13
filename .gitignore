@@ -1,1 +1,10 @@
 .env
+staticfiles/
+db.sqlite3
+*.pyc
+__pycache__/
+media/
+.venv/
+.vscode/
+.idea/
+*.log

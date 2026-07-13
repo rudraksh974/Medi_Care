@@ -1,52 +1,119 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Doctor Appointments | MediPredict{% endblock %}
 
-{% block content %}
-  <h1>My Appointments</h1>
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/appointment.css' %}?v=1.0">
+{% endblock %}
 
-  {% if appointments %}
-    <!-- Display all appointments for logged-in doctor -->
-    <!-- Backend: doctor_appointments view filters by request.user.doctor_profile -->
-    <ul class="appointment-list">
+{% block content %}
+<div class="appointment-page">
+  <div class="appointment-header">
+    <h1>Patient Appointments</h1>
+    <p>Manage your schedule and patient requests</p>
+  </div>
+
+  <div class="appointments-container">
+    {% if appointments %}
+    <!-- List Header (Desktop Only) -->
+    <div class="list-header">
+      <div></div>
+      <div>Patient Name</div>
+      <div>Date & Time</div>
+      <div>Status</div>
+      <div style="text-align: right;">Actions</div>
+    </div>
+
+    <div class="appointment-list-view">
       {% for appointment in appointments %}
-        <li class="appointment-item">
-          <div>
-            <strong>Patient:</strong> {{ appointment.patient.get_full_name|default:appointment.patient.username }}
-            <br>
-            <!-- Date formatting: Django template filter for readable dates -->
-            <strong>Appointment Time:</strong> {{ appointment.appointment_time|date:"F d, Y g:i A" }}
-            <br>
-            <strong>Status:</strong> 
-            <span class="status-{{ appointment.status|lower }}">
+      <div class="appointment-row animate-fade-up" style="animation-delay: {{ forloop.counter0 }}00ms;">
+
+        <!-- Avatar Column -->
+        <div class="app-col app-col-avatar">
+          <div class="mini-avatar" style="width: 40px; height: 40px; font-size: 1.2rem;">👤</div>
+          <!-- Mobile only name next to avatar -->
+          <div class="app-col-label" style="display: none; margin-left: 10px; font-size: 1rem; color: white;">
+            {{ appointment.patient.get_full_name|default:appointment.patient.username }}
+          </div>
+        </div>
+
+        <!-- Patient Info -->
+        <div class="app-col">
+          <span class="app-col-label">Patient</span>
+          <div class="patient-name">{{ appointment.patient.get_full_name|default:appointment.patient.username }}</div>
+        </div>
+
+        <!-- Time Info -->
+        <div class="app-col">
+          <span class="app-col-label">Date & Time</span>
+          <div class="app-time-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"
+              style="color: var(--neon-accent);">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span style="margin-left: 5px;">{{ appointment.appointment_time|date:"M d, Y • g:i A" }}</span>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="app-col">
+          <span class="app-col-label">Status</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="status-badge status-{{ appointment.status|lower }}">
               {{ appointment.status }}
             </span>
-            <br>
-            <strong>Booked on:</strong> {{ appointment.created_at|date:"F d, Y" }}
-            
-            <!-- Approve/Reject buttons: Only shown for pending appointments -->
-            <!-- Backend security: update_appointment_status view checks if doctor owns the appointment -->
-            {% if appointment.status == "Pending" %}
-              <div style="margin-top: 10px;">
-                <a href="{% url 'update_appointment_status' appointment.id %}?status=Approved" 
-                   class="btn btn-success" 
-                   style="margin-right: 10px;">
-                  Approve
-                </a>
-                <a href="{% url 'update_appointment_status' appointment.id %}?status=Rejected" 
-                   class="btn btn-danger">
-                  Reject
-                </a>
-              </div>
+            {% if appointment.appointment_mode == "Online" %}
+            <span
+              style="font-size: 0.75rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+              📹 Online
+            </span>
             {% endif %}
           </div>
-        </li>
+        </div>
+
+        <!-- Actions -->
+        <div class="app-col app-actions">
+          {% if appointment.status == "Pending" %}
+          <a href="{% url 'update_appointment_status' appointment.id %}?status=Approved" class="btn-icon btn-approve"
+            title="Approve">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </a>
+          <a href="{% url 'update_appointment_status' appointment.id %}?status=Rejected" class="btn-icon btn-reject"
+            title="Reject">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </a>
+          {% else %}
+          <span style="font-size: 0.9rem; color: var(--text-secondary);">-</span>
+          {% endif %}
+          {% if appointment.appointment_mode == "Online" and appointment.status == "Approved" %}
+          <a href="{% url 'video_call' appointment.id %}" class="btn-icon"
+            style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);"
+            title="Start Video Call">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </a>
+          {% endif %}
+        </div>
+
+      </div>
       {% endfor %}
-    </ul>
-  {% else %}
-    <!-- Empty state - gracefully handle when no appointments exist -->
-    <div style="text-align: center; padding: 40px; color: #666;">
-      <p style="font-size: 18px;">You don't have any appointments yet.</p>
     </div>
-  {% endif %}
+    {% else %}
+    <div class="empty-state-card">
+      <div class="empty-icon">📂</div>
+      <h3>No Appointments Request</h3>
+      <p>You have no pending or scheduled appointments at the moment.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

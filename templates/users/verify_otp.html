@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify OTP | MediPredict{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <!-- Left Sidebar (Visual) -->
+    <div class="auth-sidebar fade-in">
+        <div class="auth-sidebar-content">
+            <div class="auth-sidebar-logo">🔐</div>
+            <h2>Security Check</h2>
+            <p>We've sent a One-Time Password (OTP) to your email address. Please enter it to verify your account.</p>
+        </div>
+    </div>
+
+    <!-- Right Content (Form) -->
+    <div class="auth-main slide-up">
+        <div class="auth-form-container">
+            <h1 class="auth-title">Verify Email</h1>
+            <p class="auth-subtitle">Enter the 6-digit code sent to your email</p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}"
+                        style="color: var(--danger); margin-bottom: 10px;">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="auth-form-group">
+                    <label for="otp">One-Time Password</label>
+                    <input type="text" name="otp" id="otp" class="form-control" required placeholder="Enter 6-digit OTP"
+                        maxlength="6" pattern="\d{6}" title="Please enter a 6-digit number">
+                </div>
+
+                <button type="submit" class="auth-btn">Verify & Create Account</button>
+            </form>
+
+            <div class="auth-footer-text">
+                <p>Didn't receive the code? <a href="."
+                        onclick="alert('Please check your spam folder or try signing up again.'); return false;">Resend</a>
+                    or <a href="{% url 'login' %}">Cancel</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

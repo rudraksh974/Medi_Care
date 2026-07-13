@@ -1,22 +1,297 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Disease Prediction | MediPredict{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/predict.css' %}?v=1.1">
+{% endblock %}
+
 {% block content %}
-  <h1>Disease Prediction 🧬</h1>
-  <form method="POST">
-    {% csrf_token %}
-    <label>Enter symptoms (comma-separated):</label><br>
-    <input type="text" name="symptoms" placeholder="e.g., fever, cough, headache"><br>
-    <button type="submit">Predict</button>
-  </form>
+<div class="predict-page">
+  <div class="predict-container">
+    
+    <!-- Left Column: AI Symptom Checker -->
+    <div class="glass-card animate-fade-up">
+      <div class="predict-header">
+        <div class="predict-icon-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        </div>
+        <h1>AI Health Assistant</h1>
+        <p>Describe your symptoms in detail to receive a diagnostic assessment and next steps.</p>
+      </div>
 
-  {% if result %}
-    <div class="result" style="margin-top:20px; font-size:18px; color:green;">
-      <p><strong>Symptoms:</strong> {{ symptoms }}</p>
-      <p><strong>Predicted Disease:</strong> {{ result }}</p>
+      <form id="predictForm" method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Symptom Description</label>
+          <textarea name="symptoms" id="symptomsInput" class="custom-textarea"
+            placeholder="e.g., I have a high fever, dry cough, and mild shortness of breath..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-predict">
+          <span class="btn-text">Analyze Symptoms</span>
+          <div class="loading-spinner"></div>
+        </button>
+      </form>
+
+      <!-- Rich Result Container -->
+      <div id="resultContainer" class="result-container">
+        <div class="result-header">
+          <div class="result-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <div>
+            <div class="result-title">Analysis Result</div>
+            <div class="prediction-value" id="predictionText">--</div>
+          </div>
+        </div>
+
+        <!-- Confidence meter -->
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #9ca3af; margin-bottom: 5px;">
+          <span>Confidence Score</span>
+          <span id="confidenceValue">--%</span>
+        </div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+        </div>
+
+        <!-- Meta info (Specialist recommended) -->
+        <div class="result-meta">
+          <div class="meta-box">
+            <div class="meta-label">Specialist Consult</div>
+            <div class="meta-value">
+              <span class="specialist-badge" id="specialistText">--</span>
+            </div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-label">Assessment Description</div>
+            <p id="resultDescription" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin: 0;"></p>
+          </div>
+        </div>
+
+        <!-- Precautions Section -->
+        <div class="precautions-section">
+          <h3>Recommended Actions / Precautions</h3>
+          <ul class="precautions-list" id="precautionsList">
+            <!-- Populated via Javascript -->
+          </ul>
+        </div>
+
+        <!-- Book Appointment Call to Action -->
+        <div class="book-appointment-cta" style="margin: 20px 0; text-align: center;">
+          <a href="#" id="bookAppointmentBtn" class="btn-predict" style="display: inline-flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #00b4db, #0083b0); padding: 12px; border-radius: 10px; font-weight: 600; color: white; border: none; box-shadow: 0 4px 15px rgba(0, 180, 219, 0.3);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Book Appointment with <span id="btnSpecialistName">Specialist</span>
+          </a>
+        </div>
+
+        <!-- Medical Disclaimer -->
+        <div class="disclaimer-box">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> This assessment is generated by an artificial intelligence assistant for informational purposes only. It does not constitute professional medical advice, diagnosis, or treatment. Always consult with a qualified doctor for clinical guidance.
+          </p>
+        </div>
+      </div>
+
+      <div class="back-link">
+        <a href="{% url 'home' %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+          </svg>
+          Back to Home
+        </a>
+      </div>
     </div>
-  {% endif %}
 
-  <a href="{% url 'home' %}">← Back to Home</a>
+    <!-- Right Column: Prediction History -->
+    <div class="history-card animate-fade-up" style="animation-delay: 0.1s;">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        Symptom History
+      </h2>
+
+      <div class="history-list" id="historyList">
+        {% if past_predictions %}
+          {% for record in past_predictions %}
+            <div class="history-item">
+              <div class="history-item-header">
+                <span class="history-disease">{{ record.predicted_disease }}</span>
+                <span class="history-date">{{ record.created_at|date:"M d, Y h:i A" }}</span>
+              </div>
+              <div class="history-symptoms"><strong>Symptoms:</strong> {{ record.symptoms }}</div>
+              <div class="history-item-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="history-confidence">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                  {{ record.confidence }}% Confidence
+                </span>
+                <span class="history-specialist">{{ record.specialist }}</span>
+                <a href="{% url 'doctor_list' %}?specialization={{ record.specialist|urlencode }}" class="history-book-btn" style="color: #00b4db; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 6px; background: rgba(0, 180, 219, 0.05); transition: all 0.3s;">
+                  Book 📅
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="history-empty" id="historyEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="display: block; margin: 0 auto 1rem;">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <p>No previous prediction records found.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  document.getElementById('predictForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const btn = this.querySelector('.btn-predict');
+    const btnText = btn.querySelector('.btn-text');
+    const spinner = btn.querySelector('.loading-spinner');
+    const resultContainer = document.getElementById('resultContainer');
+    const symptomsInput = document.getElementById('symptomsInput');
+
+    // UI Loading State
+    btn.disabled = true;
+    btnText.style.opacity = '0';
+    spinner.style.display = 'block';
+
+    const formData = new FormData(this);
+
+    fetch('', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setTimeout(() => {
+          // Populate details
+          document.getElementById('predictionText').textContent = data.disease;
+          document.getElementById('confidenceValue').textContent = data.confidence + '%';
+          document.getElementById('confidenceFill').style.width = data.confidence + '%';
+          document.getElementById('specialistText').textContent = data.specialist;
+          document.getElementById('resultDescription').textContent = data.description;
+
+          // Set the Book Appointment button URL and text
+          const bookBtn = document.getElementById('bookAppointmentBtn');
+          const btnSpecialistName = document.getElementById('btnSpecialistName');
+          if (bookBtn && btnSpecialistName) {
+            btnSpecialistName.textContent = data.specialist;
+            // Redirect to the doctor list pre-filtered by specialist category
+            const url = `{% url 'doctor_list' %}?specialization=${encodeURIComponent(data.specialist)}`;
+            bookBtn.setAttribute('href', url);
+          }
+
+          // Populate precautions list
+          const precautionsList = document.getElementById('precautionsList');
+          precautionsList.innerHTML = '';
+          
+          if (data.precautions && data.precautions.length > 0) {
+            data.precautions.forEach(precaution => {
+              const li = document.createElement('li');
+              li.className = 'precaution-item';
+              li.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="precaution-icon">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>${precaution}</span>
+              `;
+              precautionsList.appendChild(li);
+            });
+          } else {
+            precautionsList.innerHTML = '<li class="precaution-item"><span>Consult a general physician for general precaution steps.</span></li>';
+          }
+
+          // Show result with animation
+          resultContainer.style.display = 'block';
+          resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+          // Prepend to history list dynamically
+          const historyList = document.getElementById('historyList');
+          const historyEmpty = document.getElementById('historyEmpty');
+          if (historyEmpty) {
+            historyEmpty.remove();
+          }
+
+          const newHistoryItem = document.createElement('div');
+          newHistoryItem.className = 'history-item animate-fade-up';
+          newHistoryItem.innerHTML = `
+            <div class="history-item-header">
+              <span class="history-disease">${data.disease}</span>
+              <span class="history-date">${data.created_at}</span>
+            </div>
+            <div class="history-symptoms"><strong>Symptoms:</strong> ${symptomsInput.value}</div>
+            <div class="history-item-footer" style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="history-confidence">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                ${data.confidence}% Confidence
+              </span>
+              <span class="history-specialist">${data.specialist}</span>
+              <a href="{% url 'doctor_list' %}?specialization=${encodeURIComponent(data.specialist)}" class="history-book-btn" style="color: #00b4db; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 6px; background: rgba(0, 180, 219, 0.05); transition: all 0.3s;">
+                Book 📅
+              </a>
+            </div>
+          `;
+          historyList.insertBefore(newHistoryItem, historyList.firstChild);
+
+          // Reset button
+          btn.disabled = false;
+          btnText.style.opacity = '1';
+          spinner.style.display = 'none';
+          btnText.textContent = "Analyze Again";
+        }, 800);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btnText.style.opacity = '1';
+        spinner.style.display = 'none';
+        alert('Something went wrong. Please try again.');
+      });
+  });
+</script>
 {% endblock %}

@@ -96,12 +96,17 @@ def verify_otp_view(request):
                     user.is_patient = True
                     user.is_doctor = False
                     user.save()
+                    
+                    # Automatically create corresponding Patient profile
+                    from patients.models import Patient
+                    Patient.objects.get_or_create(user=user)
+                    
                     login(request, user)
                     
-                    # Cleanup session
-                    del request.session['signup_data']
-                    del request.session['signup_otp']
-                    del request.session['signup_role']
+                    # Cleanup session safely
+                    request.session.pop('signup_data', None)
+                    request.session.pop('signup_otp', None)
+                    request.session.pop('signup_role', None)
                     
                     return redirect('patient_dashboard')
 
@@ -121,6 +126,7 @@ def verify_otp_view(request):
                     lng = form.cleaned_data.get('lng')
                     registration_number = form.cleaned_data.get('registration_number')
                     state_council = form.cleaned_data.get('state_council')
+                    registration_year = form.cleaned_data.get('registration_year')
                     
                     doctor = Doctor(
                         user=user,
@@ -132,6 +138,7 @@ def verify_otp_view(request):
                         location=location,
                         registration_number=registration_number,
                         state_council=state_council,
+                        registration_year=registration_year,
                         is_verified=False  # Must be manually verified by admin
                     )
                     
@@ -148,12 +155,11 @@ def verify_otp_view(request):
                     doctor.save()
                     login(request, user)
                     
-                    # Cleanup session
-                    del request.session['signup_data']
-                    del request.session['signup_otp']
-                    del request.session['signup_role']
-                    if 'signup_temp_file' in request.session:
-                        del request.session['signup_temp_file']
+                    # Cleanup session safely
+                    request.session.pop('signup_data', None)
+                    request.session.pop('signup_otp', None)
+                    request.session.pop('signup_role', None)
+                    request.session.pop('signup_temp_file', None)
                     
                     return redirect('doctor_dashboard')
         else:
