@@ -156,6 +156,10 @@ STORAGES = {
     },
 }
 
+# Prevent 500 errors on missing static files in production
+WHITENOISE_MANIFEST_STRICT = os.getenv('WHITENOISE_MANIFEST_STRICT', 'False') == 'True'
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
