@@ -13,10 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-try:
-    import dj_database_url
-except ImportError:
-    dj_database_url = None
+import dj_database_url
+
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
