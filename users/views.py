@@ -26,8 +26,8 @@ def patient_signup_view(request):
             otp = send_otp_email(email)
             
             if otp:
-                # Store data in session
-                request.session['signup_data'] = request.POST
+                # Store data in session as plain serializable dict
+                request.session['signup_data'] = request.POST.dict()
                 request.session['signup_otp'] = otp
                 request.session['signup_role'] = 'patient'
                 return redirect('verify_otp')
@@ -52,10 +52,11 @@ def doctor_signup_view(request):
             otp = send_otp_email(email)
             
             if otp:
-                # Store data in session
-                request.session['signup_data'] = request.POST
+                # Store data in session as plain serializable dict
+                request.session['signup_data'] = request.POST.dict()
                 request.session['signup_otp'] = otp
                 request.session['signup_role'] = 'doctor'
+
                 
                 # Save uploaded file temporarily
                 if 'verification_document' in request.FILES:
