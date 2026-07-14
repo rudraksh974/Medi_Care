@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'medi_predict.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASE_URL = os.getenv('DATABASE_URL')
-USE_MYSQL = os.getenv('USE_MYSQL', 'False') == 'True'
+USE_MYSQL = os.getenv('USE_MYSQL', 'False') == 'True' or bool(os.getenv('DB_HOST')) or bool(os.getenv('DB_NAME'))
 
 if DATABASE_URL:
     DATABASES = {
@@ -102,12 +102,13 @@ elif USE_MYSQL:
             'USER': os.getenv('DB_USER'),
             'PASSWORD': os.getenv('DB_PASSWORD'),
             'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-            'PORT': os.getenv('DB_PORT', '3306'),
+            'PORT': int(os.getenv('DB_PORT', '3306')) if os.getenv('DB_PORT') else 3306,
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             }
         }
     }
+
 else:
     DATABASES = {
         'default': {
