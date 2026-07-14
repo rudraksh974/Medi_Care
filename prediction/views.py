@@ -1,6 +1,5 @@
 import os
 import json
-import google.generativeai as genai
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -12,8 +11,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
+
+try:
+    from google import genai
+    from google.genai import types
+    HAS_NEW_GENAI = True
+except ImportError:
+    HAS_NEW_GENAI = False
+    try:
+        import google.generativeai as old_genai
+        if api_key:
+            old_genai.configure(api_key=api_key)
+    except ImportError:
+        old_genai = None
 
 def get_mock_prediction(symptoms):
     symptoms_lower = symptoms.lower()
@@ -104,13 +114,26 @@ def predict_symptoms_via_gemini(symptoms):
     IMPORTANT: Provide ONLY the JSON object. Do not include markdown code block formatting (e.g., do not wrap in ```json or ```).
     """
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash-lite")
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
-        )
+        if HAS_NEW_GENAI:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
+            )
+            text = response.text.strip()
+        elif old_genai:
+            model = old_genai.GenerativeModel("gemini-2.5-flash-lite")
+            response = model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            text = response.text.strip()
+        else:
+            return None
         
-        text = response.text.strip()
         if text.startswith("```json"):
             text = text[7:]
         if text.endswith("```"):
@@ -123,6 +146,7 @@ def predict_symptoms_via_gemini(symptoms):
     except Exception as e:
         print(f"Gemini API Error: {e}")
     return None
+
 
 def home(request):
     return render(request, 'prediction/home.html')
