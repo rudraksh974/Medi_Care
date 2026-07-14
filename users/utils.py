@@ -1,18 +1,28 @@
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.cache import cache
 
 def send_otp_email(email):
     otp = str(random.randint(100000, 999999))
-    subject = 'Your OTP for MediCare Signup'
-    message = f'Your OTP for verifying your email is: {otp}'
-    email_from = settings.EMAIL_HOST_USER
-    recipient_list = [email]
-    
-    print(f"DEBUG OTP: Generated OTP for {email} is {otp}")
+    cache.set(f"otp_{email}", otp, timeout=300)
+
+    subject = "Your OTP for MediCare Signup"
+    message = f"Your OTP is {otp}"
+
     try:
-        send_mail(subject, message, email_from, recipient_list)
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+        )
+        print("Email sent successfully")
         return otp
+
     except Exception as e:
-        print(f"Error sending email: {e}")
+        import traceback
+        traceback.print_exc()
+        print("EMAIL ERROR:", repr(e))
         return None
