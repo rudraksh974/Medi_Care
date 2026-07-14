@@ -206,7 +206,10 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_TIMEOUT = 10
 
 
-
+print("EMAIL_HOST =", EMAIL_HOST)
+print("EMAIL_PORT =", EMAIL_PORT)
+print("EMAIL_HOST_USER =", EMAIL_HOST_USER)
+print("DEFAULT_FROM_EMAIL =", DEFAULT_FROM_EMAIL)
 # Media Files Configuration (Doctor Certificates Upload, etc.)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
