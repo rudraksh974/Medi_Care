@@ -24,7 +24,7 @@ def send_otp_email(email):
             }
         ],
         "subject": "Your OTP for MediCare Signup",
-        "htmlContent": f"<h2>Your OTP is: {otp}</h2>"
+        "htmlContent": f"<h2>Thank you for joining MediCare!<br>Your OTP is: {otp}<br>Please do not share this OTP with anyone.</h2>"
     }
 
     response = requests.post(url, json=data, headers=headers)
