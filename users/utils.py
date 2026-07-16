@@ -1,28 +1,38 @@
 import random
-from django.core.mail import send_mail
+import requests
 from django.conf import settings
-from django.core.cache import cache
 
 def send_otp_email(email):
     otp = str(random.randint(100000, 999999))
-    cache.set(f"otp_{email}", otp, timeout=300)
 
-    subject = "Your OTP for MediCare Signup"
-    message = f"Your OTP is {otp}"
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
-        print("Email sent successfully")
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+
+    data = {
+        "sender": {
+            "name": "MediCare",
+            "email": settings.DEFAULT_FROM_EMAIL
+        },
+        "to": [
+            {
+                "email": email
+            }
+        ],
+        "subject": "Your OTP for MediCare Signup",
+        "htmlContent": f"<h2>Your OTP is: {otp}</h2>"
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    print(response.status_code)
+    print(response.text)
+
+    if response.status_code == 201:
         return otp
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("EMAIL ERROR:", repr(e))
-        return None
+    return None
