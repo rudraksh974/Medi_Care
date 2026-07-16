@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'anymail',
     'users',
     'patients',
     'doctors',
@@ -188,29 +187,8 @@ LOGOUT_REDIRECT_URL = '/users/login/'
 AUTH_USER_MODEL = 'users.User' # Ye default user ko hta deta hai jo django by default banata hai 
 
 # EMAIL SECTION
-EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND",
-    "anymail.backends.brevo.EmailBackend"
-)
-
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-
-ANYMAIL = {
-    "BREVO_API_KEY": BREVO_API_KEY,
-}
-
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 465))
-
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False") == "True"
-EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "True") == "True"
-
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-
-EMAIL_TIMEOUT = 10
 
 # Media Files Configuration (Doctor Certificates Upload, etc.)
 MEDIA_URL = '/media/'
