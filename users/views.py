@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import os
+import time
 
 
 
@@ -19,13 +20,29 @@ User = get_user_model()
 
 # PATIENT SIGNUP
 def patient_signup_view(request):
+    cooldown_remaining = 0
+    last_sent = request.session.get('otp_cooldown_time')
+    if last_sent:
+        elapsed = time.time() - last_sent
+        if elapsed < 30:
+            cooldown_remaining = int(30 - elapsed)
+
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
+            if cooldown_remaining > 0:
+                messages.error(request, f"Please wait {cooldown_remaining} seconds before requesting another OTP.")
+                return render(request, 'users/signup.html', {
+                    'form': form,
+                    'role': 'patient',
+                    'cooldown_remaining': cooldown_remaining
+                })
+
             email = form.cleaned_data.get('email')
             otp = send_otp_email(email)
             
             if otp:
+                request.session['otp_cooldown_time'] = time.time()
                 # Store data in session as plain serializable dict
                 request.session['signup_data'] = request.POST.dict()
                 request.session['signup_otp'] = otp
@@ -38,20 +55,37 @@ def patient_signup_view(request):
 
     return render(request, 'users/signup.html', {
         'form': form,
-        'role': 'patient'
+        'role': 'patient',
+        'cooldown_remaining': cooldown_remaining
     })
 
 
 # DOCTOR SIGNUP
 def doctor_signup_view(request):
+    cooldown_remaining = 0
+    last_sent = request.session.get('otp_cooldown_time')
+    if last_sent:
+        elapsed = time.time() - last_sent
+        if elapsed < 30:
+            cooldown_remaining = int(30 - elapsed)
+
     if request.method == 'POST':
         form = DoctorSignupForm(request.POST, request.FILES)
         if form.is_valid():
+            if cooldown_remaining > 0:
+                messages.error(request, f"Please wait {cooldown_remaining} seconds before requesting another OTP.")
+                return render(request, 'users/signup.html', {
+                    'form': form,
+                    'role': 'doctor',
+                    'cooldown_remaining': cooldown_remaining
+                })
+
             # Send OTP
             email = form.cleaned_data.get('email')
             otp = send_otp_email(email)
             
             if otp:
+                request.session['otp_cooldown_time'] = time.time()
                 # Store data in session as plain serializable dict
                 request.session['signup_data'] = request.POST.dict()
                 request.session['signup_otp'] = otp
@@ -74,7 +108,8 @@ def doctor_signup_view(request):
 
     return render(request, 'users/signup.html', {
         'form': form,
-        'role': 'doctor'
+        'role': 'doctor',
+        'cooldown_remaining': cooldown_remaining
     })
 
 # OTP VERIFICATION
@@ -108,6 +143,7 @@ def verify_otp_view(request):
                     request.session.pop('signup_data', None)
                     request.session.pop('signup_otp', None)
                     request.session.pop('signup_role', None)
+                    request.session.pop('otp_cooldown_time', None)
                     
                     return redirect('patient_dashboard')
 
@@ -161,6 +197,7 @@ def verify_otp_view(request):
                     request.session.pop('signup_otp', None)
                     request.session.pop('signup_role', None)
                     request.session.pop('signup_temp_file', None)
+                    request.session.pop('otp_cooldown_time', None)
                     
                     return redirect('doctor_dashboard')
         else:

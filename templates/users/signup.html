@@ -77,7 +77,7 @@
                 </div>
                 {% endfor %}
 
-                <button type="submit" class="auth-btn">Sign Up</button>
+                <button type="submit" id="submit-btn" class="auth-btn" data-cooldown="{{ cooldown_remaining|default:0 }}">Sign Up</button>
             </form>
 
             <div class="auth-footer-text">
@@ -89,6 +89,46 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const submitBtn = document.getElementById('submit-btn');
+    if (!submitBtn) return;
+
+    let cooldown = parseInt(submitBtn.getAttribute('data-cooldown') || '0');
+    
+    const form = submitBtn.closest('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            setTimeout(() => {
+                submitBtn.disabled = true;
+            }, 50);
+        });
+    }
+
+    if (cooldown > 0) {
+        startCountdown(cooldown);
+    }
+
+    function startCountdown(seconds) {
+        submitBtn.disabled = true;
+        const originalText = submitBtn.textContent;
+        
+        const interval = setInterval(() => {
+            seconds--;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            } else {
+                submitBtn.textContent = `Resend OTP (${seconds}s)`;
+            }
+        }, 1000);
+        
+        submitBtn.textContent = `Resend OTP (${seconds}s)`;
+    }
+  });
+</script>
+
 {% if role == 'doctor' %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
