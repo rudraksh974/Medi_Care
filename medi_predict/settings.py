@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'doctors',
     'prediction',
     'appointments',
+    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -187,6 +188,7 @@ LOGOUT_REDIRECT_URL = '/users/login/'
 AUTH_USER_MODEL = 'users.User' # Ye default user ko hta deta hai jo django by default banata hai 
 
 # EMAIL SECTION
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
