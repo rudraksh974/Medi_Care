@@ -193,8 +193,10 @@ EMAIL_BACKEND = os.getenv(
     "anymail.backends.brevo.EmailBackend"
 )
 
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+
 ANYMAIL = {
-    "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
+    "BREVO_API_KEY": BREVO_API_KEY,
 }
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
