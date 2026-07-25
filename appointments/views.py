@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from users.decorators import patient_required, doctor_required
 from doctors.models import Doctor
 from .models import Appointment
 from django.contrib import messages
 import json
 
-@login_required
+@patient_required
 def book_appointment(request, doctor_id):
     doctor = get_object_or_404(Doctor, id=doctor_id)
 
@@ -100,14 +101,14 @@ def book_appointment(request, doctor_id):
         "slot_duration": doctor.slot_duration
     })
 
-@login_required
+@patient_required
 def patient_appointments(request):
     appointments = Appointment.objects.filter(patient=request.user)
     return render(request, "appointments/patient_appointments.html", {
         "appointments": appointments
     })
 
-@login_required
+@doctor_required
 def doctor_appointments(request):
     doctor = request.user.doctor_profile
     appointments = Appointment.objects.filter(doctor=doctor)

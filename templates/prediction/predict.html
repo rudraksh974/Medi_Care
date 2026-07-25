@@ -84,6 +84,7 @@
         </div>
 
         <!-- Book Appointment Call to Action -->
+        {% if not user.is_doctor %}
         <div class="book-appointment-cta" style="margin: 20px 0; text-align: center;">
           <a href="#" id="bookAppointmentBtn" class="btn-predict" style="display: inline-flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #00b4db, #0083b0); padding: 12px; border-radius: 10px; font-weight: 600; color: white; border: none; box-shadow: 0 4px 15px rgba(0, 180, 219, 0.3);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
@@ -95,6 +96,7 @@
             Book Appointment with <span id="btnSpecialistName">Specialist</span>
           </a>
         </div>
+        {% endif %}
 
         <!-- Medical Disclaimer -->
         <div class="disclaimer-box">
@@ -150,9 +152,11 @@
                   {{ record.confidence }}% Confidence
                 </span>
                 <span class="history-specialist">{{ record.specialist }}</span>
+                {% if not user.is_doctor %}
                 <a href="{% url 'doctor_list' %}?specialization={{ record.specialist|urlencode }}" class="history-book-btn" style="color: #00b4db; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 6px; background: rgba(0, 180, 219, 0.05); transition: all 0.3s;">
                   Book 📅
                 </a>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
@@ -271,9 +275,11 @@
                 ${data.confidence}% Confidence
               </span>
               <span class="history-specialist">${data.specialist}</span>
+              {% if not user.is_doctor %}
               <a href="{% url 'doctor_list' %}?specialization=${encodeURIComponent(data.specialist)}" class="history-book-btn" style="color: #00b4db; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 6px; background: rgba(0, 180, 219, 0.05); transition: all 0.3s;">
                 Book 📅
               </a>
+              {% endif %}
             </div>
           `;
           historyList.insertBefore(newHistoryItem, historyList.firstChild);
