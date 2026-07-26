@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py createadmin && gunicorn medi_predict.wsgi:application
+web: gunicorn medi_predict.wsgi:application
