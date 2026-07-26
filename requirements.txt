@@ -41,4 +41,4 @@ urllib3==2.7.0
 whitenoise==6.12.0
 dj-database-url==2.3.0
 google-genai
-django-anymail[brevo]
+django-anymail==13.1
