@@ -1,8 +1,11 @@
+import datetime
 from django.db import models
 from django.conf import settings
 
 class Doctor(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='doctor_profile')
+    age = models.PositiveIntegerField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], blank=True, null=True)
     SPECIALIZATION_CHOICES = [
         ('General Physician', 'General Physician'),
         ('Cardiologist', 'Cardiologist'),
@@ -22,7 +25,7 @@ class Doctor(models.Model):
     ]
 
     specialization = models.CharField(max_length=100, choices=SPECIALIZATION_CHOICES, default='General Physician')
-    experience = models.PositiveIntegerField(help_text="Years of experience" , null=True)
+    experience = models.PositiveIntegerField(help_text="Years of experience", null=True, blank=True)
     location = models.CharField(max_length=255)
     phone = models.CharField(max_length=15, blank=True, null=True)
     registration_number = models.CharField(max_length=50, blank=True, null=True)
@@ -43,6 +46,15 @@ class Doctor(models.Model):
     )
     available = models.BooleanField(default=True)
     slot_duration = models.PositiveIntegerField(default=15, help_text="Duration of one patient timing slot in minutes")
+
+    def save(self, *args, **kwargs):
+        if self.registration_year:
+            current_year = datetime.date.today().year
+            calculated_exp = current_year - self.registration_year
+            self.experience = max(0, calculated_exp)
+        else:
+            self.experience = 0
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Dr. {self.user.first_name} {self.user.last_name} ({self.specialization})"

@@ -7,10 +7,22 @@ User = get_user_model()
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(required=True, label="First Name")
     email = forms.EmailField(required=True, label="Email Address")
+    age = forms.IntegerField(
+        required=True,
+        min_value=1,
+        max_value=120,
+        label="Age",
+        widget=forms.NumberInput(attrs={'placeholder': 'e.g., 25'})
+    )
+    gender = forms.ChoiceField(
+        choices=[('', 'Select Gender'), ('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
+        required=True,
+        label="Gender"
+    )
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name")
+        fields = ("username", "email", "first_name", "last_name", "age", "gender")
 
 STATE_COUNCIL_CHOICES = [
     ('', 'Select State Medical Council'),
@@ -96,3 +108,29 @@ class DoctorSignupForm(CustomUserCreationForm):
             "specialization", "appointment_mode_preference", "location", "lat", "lng",
             "registration_number", "state_council", "registration_year", "verification_document"
         )
+
+
+class PatientProfileForm(forms.Form):
+    first_name = forms.CharField(
+        required=True,
+        label="First Name",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        required=False,
+        label="Last Name",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    age = forms.IntegerField(
+        required=True,
+        min_value=1,
+        max_value=120,
+        label="Age",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 25'})
+    )
+    gender = forms.ChoiceField(
+        choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
+        required=True,
+        label="Gender",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Patient Profile | MediPredict{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-container" style="max-width: 600px; margin: 0 auto; padding: 2rem 1rem;">
+
+        <div class="profile-header" style="text-align: center; margin-bottom: 2rem;">
+            <h2>Edit Personal Profile</h2>
+            <p style="color: #a1a1aa;">Update your name, age, and gender</p>
+        </div>
+
+        <div class="profile-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2rem; backdrop-filter: blur(10px);">
+            <form method="POST" class="profile-form">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="{{ field.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: white;">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <small class="text-muted" style="display: block; font-size: 0.8rem; color: #a1a1aa; margin-top: 4px;">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <div class="text-danger" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <a href="{% url 'patient_dashboard' %}" class="btn" style="flex: 1; padding: 12px; text-align: center; border-radius: 10px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.2); color: white; background: rgba(255, 255, 255, 0.05);">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="flex: 2; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00b4db, #0083b0); color: white; font-weight: 600; cursor: pointer;">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

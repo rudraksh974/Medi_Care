@@ -19,6 +19,32 @@
         </div>
     </div>
 
+    <!-- Profile Information Card -->
+    <div class="dashboard-profile-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; backdrop-filter: blur(10px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: white;">Personal Profile</h3>
+            <a href="{% url 'edit_patient_profile' %}" class="btn btn-outline-sm" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; text-decoration: none; border: 1px solid rgba(0, 180, 219, 0.4); color: #00b4db; background: rgba(0, 180, 219, 0.1);">✏️ Edit Profile</a>
+        </div>
+        <div class="profile-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div class="profile-info-item">
+                <span class="profile-info-label" style="display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 2px;">Full Name</span>
+                <span class="profile-info-value" style="font-weight: 600; color: white;">{{ user.get_full_name|default:"Not set" }}</span>
+            </div>
+            <div class="profile-info-item">
+                <span class="profile-info-label" style="display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 2px;">Email Address</span>
+                <span class="profile-info-value" style="font-weight: 600; color: white;">{{ user.email }}</span>
+            </div>
+            <div class="profile-info-item">
+                <span class="profile-info-label" style="display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 2px;">Age</span>
+                <span class="profile-info-value" style="font-weight: 600; color: white;">{{ patient.age|default:"Not set" }} years</span>
+            </div>
+            <div class="profile-info-item">
+                <span class="profile-info-label" style="display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 2px;">Gender</span>
+                <span class="profile-info-value" style="font-weight: 600; color: white;">{{ patient.gender|default:"Not set" }}</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Actions Section -->
     <div class="dashboard-actions">
         <h2>Quick Actions</h2>
@@ -45,6 +71,14 @@
                 <h3>My Appointments</h3>
                 <p>View all your scheduled appointments, check status, and manage your bookings.</p>
                 <span class="btn btn-primary">View All</span>
+            </a>
+
+            <!-- Edit Profile Card -->
+            <a href="{% url 'edit_patient_profile' %}" class="dashboard-action-card">
+                <div class="dashboard-action-icon">✏️</div>
+                <h3>Edit Profile</h3>
+                <p>Update your personal details including name, age, and gender.</p>
+                <span class="btn btn-primary">Edit Profile</span>
             </a>
         </div>
     </div>

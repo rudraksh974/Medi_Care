@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
     path('patient/dashboard/', views.patient_dashboard, name='patient_dashboard'),
+    path('patient/profile/edit/', views.edit_patient_profile, name='edit_patient_profile'),
     path('doctor/dashboard/', views.doctor_dashboard, name='doctor_dashboard'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
 ]

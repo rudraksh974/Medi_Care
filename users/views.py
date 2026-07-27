@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from .forms import CustomUserCreationForm, DoctorSignupForm
+from .forms import CustomUserCreationForm, DoctorSignupForm, PatientProfileForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import get_user_model
 from .decorators import patient_required, doctor_required
@@ -133,9 +133,17 @@ def verify_otp_view(request):
                     user.is_doctor = False
                     user.save()
                     
+                    age = form.cleaned_data.get('age')
+                    gender = form.cleaned_data.get('gender')
+                    
                     # Automatically create corresponding Patient profile
                     from patients.models import Patient
-                    Patient.objects.get_or_create(user=user)
+                    patient, created = Patient.objects.get_or_create(user=user)
+                    if age is not None:
+                        patient.age = age
+                    if gender:
+                        patient.gender = gender
+                    patient.save()
                     
                     login(request, user)
                     
@@ -156,6 +164,8 @@ def verify_otp_view(request):
                     user.is_patient = False
                     user.save()
 
+                    age = form.cleaned_data.get('age')
+                    gender = form.cleaned_data.get('gender')
                     location = form.cleaned_data.get('location', 'Not set')
                     specialization = form.cleaned_data.get('specialization', 'General Physician')
                     appointment_mode_preference = form.cleaned_data.get('appointment_mode_preference', 'Both')
@@ -167,11 +177,12 @@ def verify_otp_view(request):
                     
                     doctor = Doctor(
                         user=user,
+                        age=age,
+                        gender=gender,
                         specialization=specialization,
                         appointment_mode_preference=appointment_mode_preference,
                         lat=lat,
                         lng=lng,
-                        experience=0,
                         location=location,
                         registration_number=registration_number,
                         state_council=state_council,
@@ -240,20 +251,38 @@ def dashboard_redirect(request):
 
 @patient_required
 def patient_dashboard(request):
-    return render(request, 'users/patient_dashboard.html')
+    from patients.models import Patient
+    patient, created = Patient.objects.get_or_create(user=request.user)
+    return render(request, 'users/patient_dashboard.html', {'patient': patient})
 
 @doctor_required
 def doctor_dashboard(request):
     return render(request, 'users/doctor_dashboard.html')
 
+@patient_required
+def edit_patient_profile(request):
+    from patients.models import Patient
+    patient, created = Patient.objects.get_or_create(user=request.user)
 
-# PATIENT DASHBOARD
-@login_required
-def patient_dashboard(request):
-    return render(request, 'users/patient_dashboard.html')
+    if request.method == 'POST':
+        form = PatientProfileForm(request.POST)
+        if form.is_valid():
+            request.user.first_name = form.cleaned_data['first_name']
+            request.user.last_name = form.cleaned_data.get('last_name', '')
+            request.user.save(update_fields=['first_name', 'last_name'])
 
+            patient.age = form.cleaned_data['age']
+            patient.gender = form.cleaned_data['gender']
+            patient.save()
 
-# DOCTOR DASHBOARD
-@login_required
-def doctor_dashboard(request):
-    return render(request, 'users/doctor_dashboard.html')
+            messages.success(request, "Your profile has been updated successfully.")
+            return redirect('patient_dashboard')
+    else:
+        form = PatientProfileForm(initial={
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'age': patient.age,
+            'gender': patient.gender,
+        })
+
+    return render(request, 'users/edit_patient_profile.html', {'form': form})
