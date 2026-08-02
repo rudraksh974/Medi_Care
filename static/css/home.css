@@ -354,35 +354,49 @@ h6 {
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: all 0.2s ease;
 }
 
 .navbar-toggle:hover {
-    background-color: var(--color-muted-light);
+    background: rgba(255, 255, 255, 0.2) !important;
 }
 
 .navbar-toggle svg {
     width: 1.5rem;
     height: 1.5rem;
-    color: var(--color-foreground);
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    fill: none !important;
 }
 
 .navbar-mobile {
     display: none;
-    padding: 1rem 0;
-    border-top: 1px solid var(--color-border);
+    padding: 1.25rem;
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+    margin-top: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
 }
 
 .navbar-mobile.active {
-    display: block;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
 .navbar-mobile a {
     display: block;
+    color: #f8fafc !important;
+    font-weight: 600 !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+}
     padding: 0.75rem 1rem;
     color: var(--color-muted);
     font-weight: 500;

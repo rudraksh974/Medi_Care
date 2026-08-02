@@ -126,6 +126,158 @@
   details[open] .chevron-icon-mini {
     transform: rotate(180deg);
   }
+
+  /* Mobile Responsive Search & Filters */
+  .search-inputs-grid {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .input-wrapper {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+
+  .search-control-input,
+  .search-control-select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    font-size: 0.95rem;
+    backdrop-filter: blur(5px);
+    box-sizing: border-box;
+  }
+
+  .search-control-select {
+    background-color: #1a1a2e;
+  }
+
+  .search-btn-group {
+    display: flex;
+    gap: 8px;
+    flex: 1 1 auto;
+  }
+
+  .btn-search-icon {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .btn-search-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-search-submit {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-grow: 1;
+    transition: transform 0.2s;
+  }
+
+  .btn-search-submit:hover {
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    .doctors-container {
+      margin-top: 80px;
+      padding: 0 16px;
+    }
+
+    .doctors-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+
+    .header-content {
+      width: 100%;
+    }
+
+    .search-form {
+      max-width: 100% !important;
+    }
+
+    .search-inputs-grid {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-wrapper {
+      width: 100%;
+    }
+
+    .search-btn-group {
+      width: 100%;
+    }
+
+    .btn-search-icon {
+      flex: 1;
+      padding: 12px;
+    }
+
+    .btn-search-submit {
+      flex: 2;
+      padding: 12px;
+    }
+
+    .filter-tabs {
+      width: 100%;
+      display: flex;
+      box-sizing: border-box;
+    }
+
+    .tab-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .nearby-filters {
+      display: flex;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nearby-filters button {
+      flex-shrink: 0;
+    }
+
+    #map-container {
+      height: 280px !important;
+    }
+
+    .map-modal-content {
+      width: 95% !important;
+      padding: 15px !important;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -139,16 +291,14 @@
 
       <form method="GET" action="{% url 'doctor_list' %}" class="search-form" id="searchForm"
         style="margin-top: 1.5rem; max-width: 500px;">
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-          <div class="input-wrapper" style="position: relative; flex: 1;">
+        <div class="search-inputs-grid">
+          <div class="input-wrapper">
             <input type="text" name="location" id="locationInput" placeholder="Search city or select on map"
-              value="{{ current_location }}"
-              style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white; backdrop-filter: blur(5px);">
+              value="{{ current_location }}" class="search-control-input">
           </div>
 
-          <div class="input-wrapper" style="position: relative; flex: 1;">
-            <select name="specialization" id="start_specialization"
-              style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #1a1a2e; color: white; backdrop-filter: blur(5px);">
+          <div class="input-wrapper">
+            <select name="specialization" id="start_specialization" class="search-control-select">
               <option value="">All Specializations</option>
               {% for spec in specializations %}
               <option value="{{ spec }}" {% if selected_specialization == spec %}selected{% endif %}>{{ spec }}</option>
@@ -156,18 +306,11 @@
             </select>
           </div>
 
-          <button type="button" id="detectLocationBtn" title="Use Current Location"
-            style="padding: 0 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">
-            🎯
-          </button>
-          <button type="button" id="toggleMapBtn" title="Select on Map"
-            style="padding: 0 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">
-            Map 📍
-          </button>
-          <button type="submit" class="btn-search"
-            style="padding: 0 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00b4db, #0083b0); color: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-            Search
-          </button>
+          <div class="search-btn-group">
+            <button type="button" id="detectLocationBtn" title="Use Current Location" class="btn-search-icon">🎯</button>
+            <button type="button" id="toggleMapBtn" title="Select on Map" class="btn-search-icon">Map 📍</button>
+            <button type="submit" class="btn-search-submit">Search</button>
+          </div>
         </div>
 
         <div class="radius-control">
