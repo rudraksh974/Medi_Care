@@ -82,16 +82,26 @@
       }
   
       /**
-       * Restore previously selected tab from localStorage
+       * Restore previously selected tab or auto-switch to external if location searched
        */
       function restoreSavedTab() {
         try {
-          const savedTab = localStorage.getItem('doctorListActiveTab');
-          if (savedTab && sections[savedTab]) {
-            switchTab(savedTab);
+          const urlParams = new URLSearchParams(window.location.search);
+          const tabParam = urlParams.get('tab');
+          const hasSearch = urlParams.has('lat') || urlParams.has('location');
+
+          const registeredGrid = sections.registered.querySelectorAll('.doctor-card');
+          const externalGrid = sections.external.querySelectorAll('.doctor-card');
+
+          if (tabParam === 'external' || (hasSearch && registeredGrid.length === 0 && externalGrid.length > 0)) {
+            switchTab('external');
+          } else {
+            const savedTab = localStorage.getItem('doctorListActiveTab');
+            if (savedTab && sections[savedTab]) {
+              switchTab(savedTab);
+            }
           }
         } catch (e) {
-          // localStorage might not be available
           console.warn('Could not restore tab preference:', e);
         }
       }

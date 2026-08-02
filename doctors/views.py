@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.utils.timezone import now
+from django.http import JsonResponse
 from doctors.models import Doctor, CachedHospital, DoctorAvailability
 from doctors import osm_api
 from django.contrib.auth.decorators import login_required
@@ -19,7 +20,7 @@ def doctor_list(request):
     radius_param = request.GET.get('radius', 5000) # Default 5km
 
     try:
-        radius = int(radius_param)
+        radius = min(max(int(radius_param), 500), 15000) # Clamp radius between 500m and 15,000m
     except:
         radius = 5000
 
@@ -56,26 +57,31 @@ def doctor_list(request):
                 print("Location not found.")
 
     external_doctors = []
+    fetch_async = False
 
     if lat and lng:
-        # Save the searched location to the user profile
-        request.user.last_lat = lat
-        request.user.last_lng = lng
-        request.user.last_location = location_query
-        request.user.save(update_fields=['last_lat', 'last_lng', 'last_location'])
+        # Save the searched location to the user profile if logged in
+        if request.user.is_authenticated:
+            try:
+                request.user.last_lat = lat
+                request.user.last_lng = lng
+                request.user.last_location = location_query
+                request.user.save(update_fields=['last_lat', 'last_lng', 'last_location'])
+            except Exception as e:
+                print(f"User location save error: {e}")
 
         # Try to retrieve from database cache first
         print(f"Checking cache for location: {lat}, {lng}")
         cached_hospitals = osm_api.get_cached_hospitals(lat, lng, radius)
+        fetch_async = False
         if cached_hospitals is not None:
             print(f"CACHE HIT: Found {len(cached_hospitals)} hospitals in database.")
             external_doctors = cached_hospitals
         else:
-            # Cache miss, fetch from external API
-            print(f"CACHE MISS: Fetching from OSM API (Location: {lat}, {lng})")
-            external_doctors = osm_api.get_nearby_hospitals(lat, lng, radius=radius)
-            # Save results to database cache
-            osm_api.save_hospitals_to_cache(lat, lng, radius, external_doctors)
+            # Cache miss: load asynchronously via background AJAX to keep HTML page load instant (<50ms)
+            print(f"CACHE MISS: Loading external facilities asynchronously via AJAX")
+            external_doctors = []
+            fetch_async = True
 
     # Filter registered doctors if location query is text-based (not coordinates)
     if location_query and not location_query.startswith("Selected on Map") and not (location_query.startswith("(") and location_query.endswith(")")):
@@ -152,6 +158,7 @@ def doctor_list(request):
         "current_lat": lat,
         "current_lng": lng,
         "current_radius": radius,
+        "fetch_async": fetch_async,
     })
 
 
@@ -240,3 +247,31 @@ def manage_availability(request):
         'grouped_availabilities': grouped_availabilities,
         'days_of_week': [d[0] for d in DoctorAvailability.DAY_CHOICES]
     })
+
+
+@login_required
+def api_nearby_hospitals(request):
+    lat_param = request.GET.get('lat')
+    lng_param = request.GET.get('lng')
+    radius_param = request.GET.get('radius', 5000)
+
+    try:
+        lat = float(lat_param)
+        lng = float(lng_param)
+        radius = min(max(int(radius_param), 500), 15000)
+    except (TypeError, ValueError):
+        return JsonResponse({'hospitals': [], 'error': 'Invalid parameters'}, status=400)
+
+    # 1. Check database cache first
+    cached_hospitals = osm_api.get_cached_hospitals(lat, lng, radius)
+    if cached_hospitals is not None:
+        return JsonResponse({'hospitals': cached_hospitals, 'source': 'cache'})
+
+    # 2. Fast concurrent fetch from external OSM API
+    try:
+        hospitals = osm_api.get_nearby_hospitals(lat, lng, radius=radius)
+        osm_api.save_hospitals_to_cache(lat, lng, radius, hospitals)
+        return JsonResponse({'hospitals': hospitals, 'source': 'api'})
+    except Exception as e:
+        print(f"API Error fetching hospitals: {e}")
+        return JsonResponse({'hospitals': [], 'error': str(e)})

@@ -1,4 +1,5 @@
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.conf import settings
 from math import radians, cos, sin, asin, sqrt
 from django.utils.timezone import now
@@ -6,9 +7,10 @@ from datetime import timedelta
 from doctors.models import CachedHospital, CachedQuery, GeocodingCache
 
 OVERPASS_URLS = [
-    "https://overpass-api.de/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter"
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter"
 ]
 # print(" OSM API FILE LOADED ")
 
@@ -116,128 +118,215 @@ def get_cached_hospitals(lat, lng, radius):
                 "address": h.address,
                 "facility_type": h.facility_type
             })
-    return results
+    return results if results else None
 
 def save_hospitals_to_cache(lat, lng, radius, hospitals):
     """
     Saves the fetched hospitals to CachedHospital (avoiding duplicates)
-    and creates a CachedQuery entry.
+    and creates a CachedQuery entry using bulk database operations.
     """
     if not hospitals:
         # Do not cache empty query results, to allow retries in case of temporary API failures/timeouts
         return
 
-    for h in hospitals:
-        h_lat = h["lat"]
-        h_lng = h["lng"]
-        h_name = h["name"]
-        h_address = h.get("address", "")
-        h_type = h.get("facility_type", "Hospital")
+    try:
+        delta_lat_hosp = radius / 111000.0
+        cos_lat = cos(radians(lat))
+        delta_lng_hosp = radius / (111000.0 * cos_lat) if cos_lat != 0 else radius / 111000.0
 
-        # Check if this hospital is already cached (matching name and within 100m)
-        delta = 0.0009
-        exists = CachedHospital.objects.filter(
-            name=h_name,
-            lat__gte=h_lat - delta,
-            lat__lte=h_lat + delta,
-            lng__gte=h_lng - delta,
-            lng__lte=h_lng + delta
-        ).exists()
+        existing_names = set(
+            CachedHospital.objects.filter(
+                lat__gte=lat - delta_lat_hosp,
+                lat__lte=lat + delta_lat_hosp,
+                lng__gte=lng - delta_lng_hosp,
+                lng__lte=lng + delta_lng_hosp
+            ).values_list('name', flat=True)
+        )
 
-        if not exists:
-            CachedHospital.objects.create(
-                name=h_name,
-                lat=h_lat,
-                lng=h_lng,
-                address=h_address,
-                facility_type=h_type
-            )
+        new_hospitals = []
+        for h in hospitals:
+            h_name = h["name"]
+            if h_name not in existing_names:
+                existing_names.add(h_name)
+                new_hospitals.append(
+                    CachedHospital(
+                        name=h_name,
+                        lat=h["lat"],
+                        lng=h["lng"],
+                        address=h.get("address", ""),
+                        facility_type=h.get("facility_type", "Hospital")
+                    )
+                )
 
-    # Save or update the CachedQuery
-    CachedQuery.objects.update_or_create(
-        lat=lat,
-        lng=lng,
-        radius=radius
-    )
+        if new_hospitals:
+            CachedHospital.objects.bulk_create(new_hospitals, ignore_conflicts=True)
 
-def get_nearby_hospitals(lat, lng, radius=5000):
-    query = f"""
-    [out:json][timeout:15];
-    (
-      node["amenity"="hospital"](around:{radius},{lat},{lng});
-      node["amenity"="clinic"](around:{radius},{lat},{lng});
-      node["amenity"="doctors"](around:{radius},{lat},{lng});
-      node["amenity"="dentist"](around:{radius},{lat},{lng});
-    );
-    out;
-    """
+        CachedQuery.objects.update_or_create(
+            lat=lat,
+            lng=lng,
+            radius=radius
+        )
+    except Exception as e:
+        print(f"Error saving hospitals to cache: {e}")
 
-    data = None
-    for url in OVERPASS_URLS:
-        try:
-            print(f"Trying Overpass API: {url}")
-            response = requests.get(
-                url,
-                params={"data": query},
-                headers=HEADERS,
-                timeout=12
-            )
-            response.raise_for_status()
-            data = response.json()
-            break
-        except Exception as e:
-            print(f"OSM ERROR on {url}: {e}")
-            continue
+def _fetch_nominatim_fallback(lat, lng, radius):
+    try:
+        print(f"Fallback: Fetching from Nominatim API (Location: {lat}, {lng})")
+        delta_lat = radius / 111000.0
+        cos_lat = cos(radians(lat))
+        delta_lng = radius / (111000.0 * cos_lat) if cos_lat != 0 else radius / 111000.0
 
-    if not data:
-        print("All Overpass API endpoints failed or timed out.")
+        viewbox = f"{lng - delta_lng:.4f},{lat + delta_lat:.4f},{lng + delta_lng:.4f},{lat - delta_lat:.4f}"
+        
+        results = []
+        seen_names = set()
+
+        for amenity in ["hospital", "clinic", "doctors", "dentist"]:
+            try:
+                resp = requests.get(
+                    "https://nominatim.openstreetmap.org/search",
+                    params={
+                        "amenity": amenity,
+                        "format": "json",
+                        "viewbox": viewbox,
+                        "bounded": 1,
+                        "limit": 30
+                    },
+                    headers=HEADERS,
+                    timeout=5
+                )
+                if resp.status_code == 200:
+                    for item in resp.json():
+                        raw_name = item.get("display_name", "").split(",")[0].strip()
+                        if not raw_name or raw_name.lower() in ["unknown hospital", "hospital", "unknown clinic", "clinic"]:
+                            continue
+                        if raw_name in seen_names:
+                            continue
+                        seen_names.add(raw_name)
+
+                        lat_val = float(item.get("lat"))
+                        lng_val = float(item.get("lon"))
+
+                        if amenity == "clinic":
+                            fac_type = "Clinic"
+                        elif amenity == "doctors":
+                            fac_type = "Doctor"
+                        elif amenity == "dentist":
+                            fac_type = "Dentist"
+                        else:
+                            fac_type = "Hospital"
+
+                        results.append({
+                            "name": raw_name,
+                            "lat": lat_val,
+                            "lng": lng_val,
+                            "address": item.get("display_name", "Address not available"),
+                            "facility_type": fac_type
+                        })
+            except Exception as ex:
+                print(f"Nominatim sub-fetch error for {amenity}: {ex}")
+
+        return results
+    except Exception as e:
+        print(f"Nominatim fallback error: {e}")
         return []
 
-    results = []
-    for el in data.get("elements", []):
-        tags = el.get("tags", {})
-        
-        # Determine category / facility_type
-        amenity = tags.get("amenity", "hospital")
-        if amenity == "hospital":
-            facility_type = "Hospital"
-        elif amenity == "clinic":
-            facility_type = "Clinic"
-        elif amenity == "doctors":
-            facility_type = "Doctor"
-        elif amenity == "dentist":
-            facility_type = "Dentist"
-        else:
-            facility_type = "Hospital"
+def get_nearby_hospitals(lat, lng, radius=5000):
+    try:
+        # Cap radius to max 15,000 meters to prevent massive Overpass payloads and server timeouts
+        radius = min(int(radius), 15000)
+
+        query = f"""
+        [out:json][timeout:6];
+        nwr["amenity"~"hospital|clinic|doctors|dentist"](around:{radius},{lat},{lng});
+        out center qt 150;
+        """
+
+        def _fetch_url(url):
+            try:
+                print(f"Trying Overpass API: {url}")
+                response = requests.get(
+                    url,
+                    params={"data": query},
+                    headers=HEADERS,
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    json_data = response.json()
+                    if json_data and json_data.get("elements"):
+                        return json_data
+            except Exception as e:
+                print(f"OSM ERROR on {url}: {e}")
+            return None
+
+        data = None
+        with ThreadPoolExecutor(max_workers=len(OVERPASS_URLS)) as executor:
+            futures = [executor.submit(_fetch_url, url) for url in OVERPASS_URLS]
+            for future in as_completed(futures):
+                res = future.result()
+                if res and not data:
+                    data = res
+                    break
+
+        if not data:
+            print("All Overpass API endpoints timed out. Using Nominatim API fallback...")
+            return _fetch_nominatim_fallback(lat, lng, radius)
+
+        results = []
+        seen_names = set()
+        for el in data.get("elements", []):
+            tags = el.get("tags", {})
             
-        # improved address construction
-        address_parts = []
-        if tags.get("addr:housenumber"):
-            address_parts.append(tags.get("addr:housenumber"))
-        if tags.get("addr:street"):
-            address_parts.append(tags.get("addr:street"))
-        if tags.get("addr:suburb"):
-             address_parts.append(tags.get("addr:suburb"))
-        if tags.get("addr:city"):
-            address_parts.append(tags.get("addr:city"))
-        
-        full_address = ", ".join(address_parts) if address_parts else tags.get("addr:full", "Address not available")
-        
-        # If still empty, try to use valid city context if available from user query (passed down? No, just keep simple)
-        if full_address == "Address not available" and tags.get("check_date"):
-             # Sometimes 'check_date' implies existence but no address. 
-             pass
+            name = tags.get("name")
+            if not name or name.lower() in ["unknown hospital", "hospital", "unknown clinic", "clinic", "unknown doctor", "doctor", "unknown dentist", "dentist"]:
+                continue
 
-        name = tags.get("name")
-        if not name or name.lower() in ["unknown hospital", "hospital", "unknown clinic", "clinic", "unknown doctor", "doctor", "unknown dentist", "dentist"]:
-            continue
+            if name in seen_names:
+                continue
+            seen_names.add(name)
 
-        results.append({
-            "name": name,
-            "lat": el.get("lat"),
-            "lng": el.get("lon"),
-            "address": full_address,
-            "facility_type": facility_type
-        })
+            lat_val = el.get("lat") or el.get("center", {}).get("lat")
+            lng_val = el.get("lon") or el.get("center", {}).get("lon")
 
-    return results
+            if lat_val is None or lng_val is None:
+                continue
+
+            amenity_val = str(tags.get("amenity") or tags.get("healthcare") or "hospital").lower()
+            name_lower = name.lower()
+
+            if "dentist" in amenity_val or "dental" in name_lower or "dentist" in name_lower:
+                facility_type = "Dentist"
+            elif "clinic" in amenity_val or "clinic" in name_lower or "polyclinic" in name_lower or "centre" in amenity_val or "center" in amenity_val:
+                facility_type = "Clinic"
+            elif "doctor" in amenity_val or "dr." in name_lower or "dr " in name_lower:
+                facility_type = "Doctor"
+            else:
+                facility_type = "Hospital"
+                
+            address_parts = []
+            if tags.get("addr:housenumber"):
+                address_parts.append(tags.get("addr:housenumber"))
+            if tags.get("addr:street"):
+                address_parts.append(tags.get("addr:street"))
+            if tags.get("addr:suburb"):
+                 address_parts.append(tags.get("addr:suburb"))
+            if tags.get("addr:city"):
+                address_parts.append(tags.get("addr:city"))
+            
+            full_address = ", ".join(address_parts) if address_parts else tags.get("addr:full", "Address not available")
+
+            results.append({
+                "name": name,
+                "lat": lat_val,
+                "lng": lng_val,
+                "address": full_address,
+                "facility_type": facility_type
+            })
+
+        if not results:
+            return _fetch_nominatim_fallback(lat, lng, radius)
+
+        return results
+    except Exception as e:
+        print(f"Error in get_nearby_hospitals: {e}")
+        return _fetch_nominatim_fallback(lat, lng, radius)

@@ -81,8 +81,8 @@ class DoctorAvailability(models.Model):
 
 class CachedHospital(models.Model):
     name = models.CharField(max_length=200)
-    lat = models.FloatField()
-    lng = models.FloatField()
+    lat = models.FloatField(db_index=True)
+    lng = models.FloatField(db_index=True)
     address = models.CharField(max_length=300, blank=True)
     facility_type = models.CharField(max_length=50, default='Hospital')
     fetched_at = models.DateTimeField(auto_now_add=True)
@@ -92,8 +92,8 @@ class CachedHospital(models.Model):
 
 
 class CachedQuery(models.Model):
-    lat = models.FloatField()
-    lng = models.FloatField()
+    lat = models.FloatField(db_index=True)
+    lng = models.FloatField(db_index=True)
     radius = models.IntegerField()
     fetched_at = models.DateTimeField(auto_now=True)
 

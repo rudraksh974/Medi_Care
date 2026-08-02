@@ -12,6 +12,34 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <style>
+  /* Fix Leaflet Geocoder Search Input text and suggestions color */
+  .leaflet-control-geocoder-form input,
+  .leaflet-control-geocoder-input,
+  .leaflet-control-geocoder input {
+    color: #111827 !important;
+    background-color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+  }
+
+  .leaflet-control-geocoder-form input::placeholder,
+  .leaflet-control-geocoder-input::placeholder {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+  }
+
+  .leaflet-control-geocoder-alternatives,
+  .leaflet-control-geocoder-alternatives a,
+  .leaflet-control-geocoder-alternatives li {
+    color: #111827 !important;
+    background-color: #ffffff !important;
+  }
+
+  .leaflet-control-geocoder-alternatives a:hover {
+    background-color: #f3f4f6 !important;
+    color: #0083b0 !important;
+  }
+
   #map-container {
     height: 400px;
     /* Taller for modal */
@@ -413,7 +441,12 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">
+    <div id="asyncLoader" class="empty-state" style="{% if not fetch_async %}display: none;{% endif %} text-align: center; padding: 40px 20px;">
+      <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #00b4db; border-radius: 50%; animation: spin 1s infinite linear;"></div>
+      <p style="color: #00b4db; margin-top: 12px; font-weight: 600;">Searching nearby healthcare facilities & hospitals...</p>
+    </div>
+
+    <div id="emptyState" class="empty-state" style="{% if fetch_async or external_doctors %}display: none;{% endif %}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
         <circle cx="12" cy="10" r="3"></circle>
@@ -639,4 +672,93 @@
     }
   });
 </script>
+
+{% if fetch_async and current_lat and current_lng %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const lat = "{{ current_lat }}";
+    const lng = "{{ current_lng }}";
+    const radius = "{{ current_radius }}";
+    const asyncUrl = "{% url 'api_nearby_hospitals' %}?lat=" + lat + "&lng=" + lng + "&radius=" + radius;
+
+    fetch(asyncUrl)
+      .then(response => response.json())
+      .then(data => {
+        const asyncLoader = document.getElementById('asyncLoader');
+        const emptyState = document.getElementById('emptyState');
+        if (asyncLoader) asyncLoader.style.display = 'none';
+
+        if (data && data.hospitals && data.hospitals.length > 0) {
+          let container = document.querySelector('#external-section .doctors-grid');
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'doctors-grid';
+            document.getElementById('external-section').appendChild(container);
+          }
+          container.innerHTML = '';
+          data.hospitals.forEach(doc => {
+            let typeBadge = '🏥 Hospital';
+            if (doc.facility_type === 'Clinic') typeBadge = '🩺 Clinic';
+            else if (doc.facility_type === 'Doctor') typeBadge = '👨‍⚕️ Doctor';
+            else if (doc.facility_type === 'Dentist') typeBadge = '🦷 Dentist';
+
+            const card = document.createElement('div');
+            card.className = 'doctor-card external';
+            card.setAttribute('data-facility-type', doc.facility_type || 'Hospital');
+            card.innerHTML = `
+              <div class="card-header">
+                <div class="facility-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  </svg>
+                </div>
+                <div class="doctor-info">
+                  <h3 class="doctor-name">${doc.name}</h3>
+                  <span class="external-badge" style="background: rgba(0, 180, 219, 0.15); color: #00b4db; border: 1px solid rgba(0, 180, 219, 0.3); padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                    ${typeBadge}
+                  </span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="info-row">
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  <span>${doc.address}</span>
+                </div>
+              </div>
+              <div class="card-footer">
+                <a href="https://www.openstreetmap.org/?mlat=${doc.lat}&mlon=${doc.lng}" target="_blank" class="btn-map">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                  </svg>
+                  View on Map
+                </a>
+                <p class="external-note">Appointment booking not available</p>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+
+          // Update tab badge counts
+          const externalBadge = document.querySelector('.tab-btn[data-tab="external"] .tab-count');
+          if (externalBadge) externalBadge.textContent = data.hospitals.length;
+          const headerStats = document.querySelectorAll('.header-stats .stat-number');
+          if (headerStats && headerStats[1]) headerStats[1].textContent = data.hospitals.length;
+
+        } else {
+          if (emptyState) emptyState.style.display = 'block';
+        }
+      })
+      .catch(err => {
+        console.warn('Async hospital fetch error:', err);
+        const asyncLoader = document.getElementById('asyncLoader');
+        const emptyState = document.getElementById('emptyState');
+        if (asyncLoader) asyncLoader.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+      });
+  });
+</script>
+{% endif %}
 {% endblock %}
