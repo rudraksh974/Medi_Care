@@ -189,12 +189,13 @@ AUTH_USER_MODEL = 'users.User' # Ye default user ko hta deta hai jo django by de
 
 # EMAIL SECTION
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 
 ANYMAIL = {
-    "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
+    "BREVO_API_KEY": BREVO_API_KEY,
 }
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@medicare.com")
 
 # Media Files Configuration (Doctor Certificates Upload, etc.)
 MEDIA_URL = '/media/'
