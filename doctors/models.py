@@ -45,6 +45,7 @@ class Doctor(models.Model):
         default='Both'
     )
     available = models.BooleanField(default=True)
+    consultation_fee = models.PositiveIntegerField(default=500, help_text="Consultation fee in INR (₹)")
     slot_duration = models.PositiveIntegerField(default=15, help_text="Duration of one patient timing slot in minutes")
 
     def save(self, *args, **kwargs):

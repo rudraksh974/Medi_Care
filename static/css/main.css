@@ -221,34 +221,39 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%) !important;
     color: var(--white);
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 180, 219, 0.3);
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 8px 25px rgba(0, 180, 219, 0.45);
+    background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%) !important;
 }
 
 .btn-outline {
-    background: transparent;
-    color: var(--primary);
-    border: 2px solid var(--primary);
+    background: rgba(0, 180, 219, 0.08);
+    color: #00b4db;
+    border: 1px solid rgba(0, 180, 219, 0.35);
+    font-weight: 600;
 }
 
 .btn-outline:hover {
-    background: var(--primary);
+    background: rgba(0, 180, 219, 0.2);
     color: var(--white);
+    border-color: #00b4db;
 }
 
 .btn-ghost {
-    background: transparent;
-    color: var(--secondary);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.12);
     color: var(--white);
 }
 
@@ -1500,6 +1505,43 @@ textarea {
     .dashboard-welcome {
         flex-direction: column;
         text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .auth-container {
+        margin: 70px auto 20px;
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+    }
+
+    .auth-main {
+        padding: 1.5rem 1rem !important;
+    }
+
+    .dashboard-container {
+        margin: 70px auto 20px;
+        padding: 0 12px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.65rem;
+    }
+
+    .profile-info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.95rem;
     }
 }
 

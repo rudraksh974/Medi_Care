@@ -153,11 +153,29 @@ textarea.form-control {
 }
 
 @media (max-width: 768px) {
+    .profile-page {
+        padding: 75px 12px 30px;
+    }
+
     .form-row {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .profile-card {
-        padding: 1.5rem;
+        padding: 1.5rem 1.25rem;
+        border-radius: 18px;
+    }
+
+    .profile-header h2 {
+        font-size: 1.65rem;
+    }
+
+    .profile-header p {
+        font-size: 0.95rem;
+    }
+
+    .form-section {
+        padding: 1.15rem 1rem;
     }
 }

@@ -313,6 +313,39 @@
           </div>
         </div>
 
+        <div class="search-filters-row" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+          <div class="input-wrapper" style="flex: 1 1 130px;">
+            <select name="max_fee" class="search-control-select">
+              <option value="">Max Fee (Any)</option>
+              <option value="300" {% if selected_max_fee == "300" %}selected{% endif %}>Under ₹300</option>
+              <option value="500" {% if selected_max_fee == "500" %}selected{% endif %}>Under ₹500</option>
+              <option value="1000" {% if selected_max_fee == "1000" %}selected{% endif %}>Under ₹1000</option>
+              <option value="2000" {% if selected_max_fee == "2000" %}selected{% endif %}>Under ₹2000</option>
+              <option value="5000" {% if selected_max_fee == "5000" %}selected{% endif %}>Under ₹5000</option>
+            </select>
+          </div>
+
+          <div class="input-wrapper" style="flex: 1 1 130px;">
+            <select name="min_experience" class="search-control-select">
+              <option value="">Min Experience</option>
+              <option value="1" {% if selected_min_experience == "1" %}selected{% endif %}>1+ Years</option>
+              <option value="3" {% if selected_min_experience == "3" %}selected{% endif %}>3+ Years</option>
+              <option value="5" {% if selected_min_experience == "5" %}selected{% endif %}>5+ Years</option>
+              <option value="10" {% if selected_min_experience == "10" %}selected{% endif %}>10+ Years</option>
+              <option value="15" {% if selected_min_experience == "15" %}selected{% endif %}>15+ Years</option>
+            </select>
+          </div>
+
+          <div class="input-wrapper" style="flex: 1 1 130px;">
+            <select name="sort_by" class="search-control-select">
+              <option value="">Sort By</option>
+              <option value="fee_low" {% if selected_sort_by == "fee_low" %}selected{% endif %}>Fee: Low to High</option>
+              <option value="fee_high" {% if selected_sort_by == "fee_high" %}selected{% endif %}>Fee: High to Low</option>
+              <option value="exp_high" {% if selected_sort_by == "exp_high" %}selected{% endif %}>Experience: High to Low</option>
+            </select>
+          </div>
+        </div>
+
         <div class="radius-control">
           <label for="radius">Radius: <span id="radiusVal">{% widthratio current_radius|default:5000 1000 1 %}</span> km</label>
           <input type="range" id="radius" name="radius" min="1000" max="50000" step="1000"
@@ -401,6 +434,13 @@
         </div>
 
         <div class="card-body">
+          <div class="info-row">
+            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #10b981;">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span><strong>Consultation Fee:</strong> <span style="color: #10b981; font-weight: 700;">₹{{ doctor.consultation_fee|default:500 }}</span></span>
+          </div>
+
           <div class="info-row">
             <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path
@@ -521,12 +561,12 @@
   <div class="doctors-section hidden" id="external-section">
     {% if external_doctors %}
     <!-- Nearby Facilities Filter -->
-    <div class="nearby-filters" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-      <button class="btn-filter-nearby active" data-facility-type="all" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: linear-gradient(135deg, #00b4db, #0083b0); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem; font-weight: 600;">All Facilities</button>
-      <button class="btn-filter-nearby" data-facility-type="Hospital" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🏥 Hospitals</button>
-      <button class="btn-filter-nearby" data-facility-type="Clinic" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🩺 Clinics</button>
-      <button class="btn-filter-nearby" data-facility-type="Doctor" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">👨‍⚕️ Doctors</button>
-      <button class="btn-filter-nearby" data-facility-type="Dentist" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: all 0.3s; font-size: 0.85rem;">🦷 Dentists</button>
+    <div class="nearby-filters">
+      <button class="btn-filter-nearby active" data-facility-type="all">All Facilities</button>
+      <button class="btn-filter-nearby" data-facility-type="Hospital">🏥 Hospitals</button>
+      <button class="btn-filter-nearby" data-facility-type="Clinic">🩺 Clinics</button>
+      <button class="btn-filter-nearby" data-facility-type="Doctor">👨‍⚕️ Doctors</button>
+      <button class="btn-filter-nearby" data-facility-type="Dentist">🦷 Dentists</button>
     </div>
 
     <div class="doctors-grid">

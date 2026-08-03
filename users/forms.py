@@ -97,6 +97,12 @@ class DoctorSignupForm(CustomUserCreationForm):
         label="Registration Year",
         widget=forms.NumberInput(attrs={'placeholder': 'e.g., 2018', 'min': 1950, 'max': 2026})
     )
+    consultation_fee = forms.IntegerField(
+        required=False,
+        initial=500,
+        label="Consultation Fee (₹)",
+        widget=forms.NumberInput(attrs={'placeholder': 'e.g., 500', 'min': 0, 'step': 50})
+    )
     verification_document = forms.FileField(
         required=True,
         label="Registration Certificate",
@@ -105,7 +111,7 @@ class DoctorSignupForm(CustomUserCreationForm):
 
     class Meta(CustomUserCreationForm.Meta):
         fields = CustomUserCreationForm.Meta.fields + (
-            "specialization", "appointment_mode_preference", "location", "lat", "lng",
+            "specialization", "consultation_fee", "appointment_mode_preference", "location", "lat", "lng",
             "registration_number", "state_council", "registration_year", "verification_document"
         )
 

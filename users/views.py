@@ -174,12 +174,14 @@ def verify_otp_view(request):
                     registration_number = form.cleaned_data.get('registration_number')
                     state_council = form.cleaned_data.get('state_council')
                     registration_year = form.cleaned_data.get('registration_year')
+                    consultation_fee = form.cleaned_data.get('consultation_fee') or 500
                     
                     doctor = Doctor(
                         user=user,
                         age=age,
                         gender=gender,
                         specialization=specialization,
+                        consultation_fee=consultation_fee,
                         appointment_mode_preference=appointment_mode_preference,
                         lat=lat,
                         lng=lng,

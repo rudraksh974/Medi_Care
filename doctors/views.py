@@ -147,12 +147,34 @@ def doctor_list(request):
             doctors = doctors.filter(specialization=specialization_query)
         else:
             doctors = doctors.filter(specialization=specialization_query)
+
+    # Additional Patient Filters: Max Fee, Min Experience, and Sorting
+    max_fee_param = request.GET.get('max_fee')
+    min_exp_param = request.GET.get('min_experience')
+    sort_by_param = request.GET.get('sort_by')
+
+    if max_fee_param and max_fee_param.isdigit():
+        doctors = doctors.filter(consultation_fee__lte=int(max_fee_param))
+
+    if min_exp_param and min_exp_param.isdigit():
+        doctors = doctors.filter(experience__gte=int(min_exp_param))
+
+    if sort_by_param == 'fee_low':
+        doctors = doctors.order_by('consultation_fee')
+    elif sort_by_param == 'fee_high':
+        doctors = doctors.order_by('-consultation_fee')
+    elif sort_by_param == 'exp_high':
+        doctors = doctors.order_by('-experience')
+
     specializations = [c[0] for c in Doctor.SPECIALIZATION_CHOICES]
 
     return render(request, "doctors/doctor_list.html", {
         "doctors": doctors,
         "specializations": specializations,
         "selected_specialization": specialization_query,
+        "selected_max_fee": max_fee_param or "",
+        "selected_min_experience": min_exp_param or "",
+        "selected_sort_by": sort_by_param or "",
         "external_doctors": external_doctors,
         "current_location": location_query or "",
         "current_lat": lat,
