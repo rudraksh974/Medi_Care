@@ -83,71 +83,6 @@ def doctor_list(request):
             external_doctors = []
             fetch_async = True
 
-    # Filter registered doctors if location query is text-based (not coordinates)
-    if location_query and not location_query.startswith("Selected on Map") and not (location_query.startswith("(") and location_query.endswith(")")):
-         doctors = doctors.filter(location__icontains=location_query)
-
-    specialization_query = request.GET.get('specialization')
-    if specialization_query:
-        # Map the incoming query to a standard specialization choice if possible
-        mapped_specialization = None
-        query_lower = specialization_query.lower()
-        
-        # Substring / keyword mappings
-        keywords_map = {
-            'cardio': 'Cardiologist',
-            'heart': 'Cardiologist',
-            'derma': 'Dermatologist',
-            'skin': 'Dermatologist',
-            'neuro': 'Neurologist',
-            'brain': 'Neurologist',
-            'ortho': 'Orthopedist',
-            'bone': 'Orthopedist',
-            'pediat': 'Pediatrician',
-            'child': 'Pediatrician',
-            'psych': 'Psychiatrist',
-            'mental': 'Psychiatrist',
-            'gyn': 'Gynecologist',
-            'ent': 'ENT Specialist',
-            'ear': 'ENT Specialist',
-            'nose': 'ENT Specialist',
-            'throat': 'ENT Specialist',
-            'dentist': 'Dentist',
-            'dental': 'Dentist',
-            'ophthalm': 'Ophthalmologist',
-            'eye': 'Ophthalmologist',
-            'uro': 'Urologist',
-            'gastro': 'Gastroenterologist',
-            'stomach': 'Gastroenterologist',
-            'pulmon': 'Pulmonologist',
-            'lung': 'Pulmonologist',
-            'oncol': 'Oncologist',
-            'cancer': 'Oncologist',
-            'physician': 'General Physician',
-            'general': 'General Physician',
-        }
-        
-        # 1. Try keyword/substring match
-        for key, val in keywords_map.items():
-            if key in query_lower:
-                mapped_specialization = val
-                break
-                
-        # 2. Try matching any of the choice names as a substring (e.g. if query contains choice or vice-versa)
-        if not mapped_specialization:
-            for choice, _ in Doctor.SPECIALIZATION_CHOICES:
-                choice_lower = choice.lower()
-                if choice_lower in query_lower or query_lower in choice_lower:
-                    mapped_specialization = choice
-                    break
-        
-        # If we successfully mapped it, use it for filtering and UI selection
-        if mapped_specialization:
-            specialization_query = mapped_specialization
-            doctors = doctors.filter(specialization=specialization_query)
-        else:
-            doctors = doctors.filter(specialization=specialization_query)
-
     # Additional Patient Filters: Max Fee, Min Experience, and Sorting
     max_fee_param = request.GET.get('max_fee')
     min_exp_param = request.GET.get('min_experience')
@@ -159,12 +94,77 @@ def doctor_list(request):
     if min_exp_param and min_exp_param.isdigit():
         doctors = doctors.filter(experience__gte=int(min_exp_param))
 
+    # Apply specialization filter
+    specialization_query = request.GET.get('specialization')
+    if specialization_query:
+        mapped_specialization = None
+        query_lower = specialization_query.lower()
+        
+        keywords_map = {
+            'cardio': 'Cardiologist', 'heart': 'Cardiologist',
+            'derma': 'Dermatologist', 'skin': 'Dermatologist',
+            'neuro': 'Neurologist', 'brain': 'Neurologist',
+            'ortho': 'Orthopedist', 'bone': 'Orthopedist',
+            'pediat': 'Pediatrician', 'child': 'Pediatrician',
+            'psych': 'Psychiatrist', 'mental': 'Psychiatrist',
+            'gyn': 'Gynecologist',
+            'ent': 'ENT Specialist', 'ear': 'ENT Specialist', 'nose': 'ENT Specialist', 'throat': 'ENT Specialist',
+            'dentist': 'Dentist', 'dental': 'Dentist',
+            'ophthalm': 'Ophthalmologist', 'eye': 'Ophthalmologist',
+            'uro': 'Urologist',
+            'gastro': 'Gastroenterologist', 'stomach': 'Gastroenterologist',
+            'pulmon': 'Pulmonologist', 'lung': 'Pulmonologist',
+            'oncol': 'Oncologist', 'cancer': 'Oncologist',
+            'physician': 'General Physician', 'general': 'General Physician',
+        }
+        
+        for key, val in keywords_map.items():
+            if key in query_lower:
+                mapped_specialization = val
+                break
+                
+        if not mapped_specialization:
+            for choice, _ in Doctor.SPECIALIZATION_CHOICES:
+                choice_lower = choice.lower()
+                if choice_lower in query_lower or query_lower in choice_lower:
+                    mapped_specialization = choice
+                    break
+        
+        if mapped_specialization:
+            specialization_query = mapped_specialization
+            doctors = doctors.filter(specialization=specialization_query)
+        else:
+            doctors = doctors.filter(specialization=specialization_query)
+
+    # Calculate distance and filter within radius range for registered doctors if coordinates exist
+    doctor_list_results = []
+    for doctor in doctors:
+        if lat and lng and doctor.lat and doctor.lng:
+            dist_m = osm_api.haversine_distance(lat, lng, doctor.lat, doctor.lng)
+            doctor.distance_km = round(dist_m / 1000.0, 1)
+            # Only include registered doctors within the selected radius range
+            if dist_m <= radius:
+                doctor_list_results.append(doctor)
+        else:
+            doctor.distance_km = None
+            doctor_list_results.append(doctor)
+
+    # Sort registered doctors
     if sort_by_param == 'fee_low':
-        doctors = doctors.order_by('consultation_fee')
+        doctors = sorted(doctor_list_results, key=lambda d: d.consultation_fee or 0)
     elif sort_by_param == 'fee_high':
-        doctors = doctors.order_by('-consultation_fee')
+        doctors = sorted(doctor_list_results, key=lambda d: d.consultation_fee or 0, reverse=True)
     elif sort_by_param == 'exp_high':
-        doctors = doctors.order_by('-experience')
+        doctors = sorted(doctor_list_results, key=lambda d: d.experience or 0, reverse=True)
+    elif lat and lng:
+        # Default: nearest first if lat/lng available
+        doctors = sorted(doctor_list_results, key=lambda d: d.distance_km if d.distance_km is not None else 99999)
+    else:
+        # Fallback text filter if lat/lng unavailable
+        if location_query and not location_query.startswith("Selected on Map") and not (location_query.startswith("(") and location_query.endswith(")")):
+            doctors = [d for d in doctor_list_results if location_query.lower() in (d.location or '').lower()]
+        else:
+            doctors = doctor_list_results
 
     specializations = [c[0] for c in Doctor.SPECIALIZATION_CHOICES]
 
